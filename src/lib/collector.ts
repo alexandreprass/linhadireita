@@ -15,6 +15,8 @@ import {
   type RawArticle,
 } from "./grok";
 import { normalizeCategory } from "./categories";
+import { isDuplicateNews } from "./dedupe";
+import { pruneOldArticles } from "./retention";
 import { uniqueSlug } from "./slug";
 import { SOURCES } from "./sources";
 
@@ -37,6 +39,8 @@ export type CollectStats = {
   skippedBlocked: number;
   skippedOffTopic: number;
   skippedRateLimit: number;
+  skippedDuplicate: number;
+  pruned: number;
   saved: number;
   imagesOk: number;
   errors: string[];
@@ -177,6 +181,8 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
       skippedBlocked: 0,
       skippedOffTopic: 0,
       skippedRateLimit: 0,
+      skippedDuplicate: 0,
+      pruned: 0,
       saved: 0,
       imagesOk: 0,
       errors: [],
@@ -203,6 +209,8 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
     skippedBlocked: 0,
     skippedOffTopic: 0,
     skippedRateLimit: 0,
+    skippedDuplicate: 0,
+    pruned: 0,
     saved: 0,
     imagesOk: 0,
     errors: [],
@@ -228,14 +236,20 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
       if (processed >= limit) break;
 
       try {
-        // Já visto?
-        const seen =
-          (await prisma.seenLink.findUnique({ where: { link: raw.originalLink } })) ||
-          (raw.originalLink
-            ? await prisma.article.findUnique({ where: { originalLink: raw.originalLink } })
-            : null);
-        if (seen) {
+        // Anti-repetição: link + título parecido com matérias recentes
+        const dup = await isDuplicateNews({
+          originalLink: raw.originalLink,
+          originalTitle: raw.originalTitle,
+        });
+        if (dup.duplicate) {
+          stats.skippedDuplicate += 1;
           stats.skippedSeen += 1;
+          await prisma.seenLink.upsert({
+            where: { link: raw.originalLink },
+            create: { link: raw.originalLink },
+            update: {},
+          });
+          console.log(`[collector] DUPLICADA: ${raw.originalTitle.slice(0, 60)} (${dup.reason})`);
           continue;
         }
 
@@ -304,6 +318,26 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
           throw err;
         }
 
+        // Segunda checagem: título reescrito pode colidir com outra matéria
+        const dupAfter = await isDuplicateNews({
+          originalLink: raw.originalLink,
+          originalTitle: raw.originalTitle,
+          title: rewritten.title,
+        });
+        if (dupAfter.duplicate && dupAfter.reason !== "link já utilizado") {
+          // link ainda não marcado se só o título bateu com outra pauta
+          stats.skippedDuplicate += 1;
+          await prisma.seenLink.upsert({
+            where: { link: raw.originalLink },
+            create: { link: raw.originalLink },
+            update: {},
+          });
+          console.log(
+            `[collector] DUPLICADA pós-IA: ${rewritten.title.slice(0, 60)} (${dupAfter.reason})`
+          );
+          continue;
+        }
+
         // Imagem Grok Imagine (fallback: feed)
         let imageUrl = raw.imageUrl || null;
         try {
@@ -360,6 +394,9 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
         stats.saved += 1;
         stats.articles.push({ id: article.id, slug: article.slug, title: article.title });
         console.log(`[collector] PUBLICADO: ${article.title.slice(0, 80)}`);
+
+        // Mantém no máximo 200 notícias (apaga as mais antigas)
+        stats.pruned += await pruneOldArticles();
       } catch (err) {
         const msg = err instanceof GrokError ? err.message : String(err);
         stats.errors.push(`${raw.originalTitle}: ${msg}`);
@@ -377,10 +414,13 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
       }
     }
 
+    // Limpeza final de retenção
+    stats.pruned += await pruneOldArticles();
+
     stats.message =
       `fetched=${stats.fetched} saved=${stats.saved} blocked=${stats.skippedBlocked} ` +
-      `offtopic=${stats.skippedOffTopic} skip=${stats.skippedSeen} imgs=${stats.imagesOk} ` +
-      `limit=${limit}/h`;
+      `offtopic=${stats.skippedOffTopic} dup=${stats.skippedDuplicate} skip=${stats.skippedSeen} ` +
+      `imgs=${stats.imagesOk} pruned=${stats.pruned} limit=${limit}/h`;
     await prisma.jobLog.update({
       where: { id: job.id },
       data: { status: "ok", detail: stats.message, finishedAt: new Date() },

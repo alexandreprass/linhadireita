@@ -5,6 +5,8 @@ import { generateNewsImage } from "@/lib/grok";
 import { prisma } from "@/lib/db";
 import { uniqueSlug } from "@/lib/slug";
 import { normalizeCategory } from "@/lib/categories";
+import { isDuplicateNews } from "@/lib/dedupe";
+import { pruneOldArticles } from "@/lib/retention";
 
 /**
  * Publicação manual de notícia pelo admin.
@@ -39,6 +41,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: blocked.reason }, { status: 400 });
   }
 
+  const dup = await isDuplicateNews({ title, originalTitle: title });
+  if (dup.duplicate) {
+    return NextResponse.json(
+      { error: `Notícia repetida: ${dup.reason}${dup.matchedTitle ? ` — “${dup.matchedTitle}”` : ""}` },
+      { status: 409 }
+    );
+  }
+
   category = normalizeCategory(category);
 
   if (generateImage && !imageUrl) {
@@ -68,6 +78,8 @@ export async function POST(req: NextRequest) {
       publishedAt: new Date(),
     },
   });
+
+  await pruneOldArticles();
 
   return NextResponse.json({ ok: true, article });
 }

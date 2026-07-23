@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push && next build",
-    "start": "next start",
+    "build": "prisma generate && next build",
+    "start": "prisma db push && next start -p ${PORT:-3000}",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "collect": "tsx scripts/collect-once.ts"
+  },
+  "engines": {
+    "node": ">=20 <25"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

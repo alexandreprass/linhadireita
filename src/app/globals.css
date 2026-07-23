@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0b0d12;
+  --foreground: #f3f4f7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-source-serif);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(900px 500px at 10% -10%, rgba(220, 38, 38, 0.16), transparent 55%),
+    radial-gradient(700px 400px at 90% 0%, rgba(249, 115, 22, 0.1), transparent 50%),
+    var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+}
+
+/* Tipografia de corpo de notícia */
+.prose-news p {
+  margin-bottom: 1.15rem;
+  line-height: 1.75;
+  color: #e4e7ee;
+  font-size: 1.08rem;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

@@ -182,12 +182,19 @@ export async function generateNewsImage(opts: {
     return null;
   }
 
+  // Só imagem realista do assunto — sem texto, logo ou nome do site
   const prompt = [
-    `Editorial news illustration for Brazilian news website LINHA DIREITA, category ${opts.category || "geral"}.`,
-    `Topic: ${opts.title}.`,
-    opts.lead ? `Context: ${opts.lead.slice(0, 220)}.` : "",
-    "Style: modern photorealistic editorial photography, cinematic lighting, high quality press image,",
-    "no text, no watermarks, no logos, no captions, symbolic professional composition, 16:9.",
+    "Photorealistic documentary news photograph, extremely realistic, looks like a real press photo taken with a DSLR camera.",
+    `Subject matter (show the real-world scene related to this news only): ${opts.title}.`,
+    opts.lead ? `Scene context: ${opts.lead.slice(0, 200)}.` : "",
+    `News category: ${opts.category || "politica"}.`,
+    "Natural lighting, authentic Brazilian or international setting as the topic requires,",
+    "sharp detail, shallow depth of field when appropriate, professional photojournalism style,",
+    "true-to-life colors, no CGI look, no illustration, no cartoon, no 3D render.",
+    "CRITICAL: absolutely NO text, NO letters, NO words, NO numbers as overlay,",
+    "NO watermarks, NO logos, NO brand names, NO site name, NO captions, NO banners,",
+    "NO 'Linha Direita', NO writing of any kind on the image.",
+    "Horizontal 16:9 composition suitable for a news article header.",
   ]
     .filter(Boolean)
     .join(" ");

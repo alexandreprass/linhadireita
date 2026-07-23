@@ -15,7 +15,6 @@
 Crie estas no painel do serviço:
 
 ```
-DATABASE_URL=file:./dev.db
 NODE_VERSION=20
 XAI_API_KEY=sua_chave_xai
 GROK_MODEL=grok-4.5
@@ -28,7 +27,7 @@ NEXT_PUBLIC_SITE_URL=https://SEU-SERVICO.onrender.com
 MAX_REWRITE_PER_CYCLE=6
 ```
 
-> Com `file:./dev.db` o site sobe **sem** banco Postgres (mais simples).  
+> **Não precisa de DATABASE_URL** — o projeto usa SQLite embutido (`prisma/linhadireita.db`).  
 > Os dados podem zerar se o Render recriar o container. Depois você pode migrar para Postgres.
 
 ## Se quiser PostgreSQL (melhor)

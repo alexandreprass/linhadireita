@@ -1,11 +1,13 @@
-// Prisma 5 — SQLite local (simples). No Render use PostgreSQL alterando provider + DATABASE_URL.
+// Prisma 5 — SQLite (funciona local e no Render sem configurar DATABASE_URL).
+// Para PostgreSQL no futuro, troque provider e url para env("DATABASE_URL").
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // Caminho fixo: não depende de variável de ambiente no deploy
+  url      = "file:./linhadireita.db"
 }
 
 model Article {

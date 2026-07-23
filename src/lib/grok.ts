@@ -3,6 +3,7 @@
  * Base OpenAI-compatible: https://api.x.ai/v1
  */
 
+import { normalizeCategory } from "./categories";
 import { editorialSystemRules, isBlockedContent, isBolsonaroRelated } from "./filter";
 
 const XAI_BASE = "https://api.x.ai/v1";
@@ -82,17 +83,18 @@ export async function rewriteArticle(raw: RawArticle): Promise<RewrittenArticle>
 
   const system = [
     "Você é o editor-chefe do portal de notícias LINHA DIREITA.",
+    "Linha editorial de direita, com viés favorável a Bolsonaro e Flávio Bolsonaro.",
     "Reescreva notícias de forma 100% ORIGINAL em português do Brasil.",
     editorialSystemRules(bolsonaro),
     "Formato:",
     "- Título (máx. 90 caracteres), sem clickbait enganoso",
     "- Lead de 1–2 frases",
     "- Corpo com 3 a 6 parágrafos curtos",
-    "- Uma categoria: politica, economia, brasil, mundo, tecnologia, seguranca, saude, cultura, esporte, geral",
+    "- Uma categoria: politica, eleicoes, seguranca, stf, congresso, eua, economia, brasil",
     "- 3 a 6 tags em minúsculas",
     "Responda APENAS JSON:",
     '{"reject":false,"title":"...","lead":"...","body":"p1\\n\\np2","category":"politica","tags":["a","b"]}',
-    'Se proibido: {"reject":true,"reason":"..."}',
+    'Se proibido ou fora do foco: {"reject":true,"reason":"..."}',
   ].join("\n");
 
   const user = [
@@ -144,7 +146,7 @@ export async function rewriteArticle(raw: RawArticle): Promise<RewrittenArticle>
   const title = String(parsed.title || "").trim();
   const lead = String(parsed.lead || "").trim();
   let body = String(parsed.body || "").trim().replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n");
-  let category = String(parsed.category || raw.categoryHint || "geral").toLowerCase().trim();
+  let category = String(parsed.category || raw.categoryHint || "politica").toLowerCase().trim();
   let tags = Array.isArray(parsed.tags)
     ? (parsed.tags as unknown[]).map((t) => String(t).toLowerCase().trim()).filter(Boolean)
     : [];
@@ -154,19 +156,7 @@ export async function rewriteArticle(raw: RawArticle): Promise<RewrittenArticle>
   const blocked = isBlockedContent(title, lead, body, tags.join(" "));
   if (blocked.blocked) throw new RejectedContentError(blocked.reason);
 
-  const valid = new Set([
-    "politica",
-    "economia",
-    "brasil",
-    "mundo",
-    "tecnologia",
-    "seguranca",
-    "saude",
-    "cultura",
-    "esporte",
-    "geral",
-  ]);
-  if (!valid.has(category)) category = "geral";
+  category = normalizeCategory(category);
   if (bolsonaro) tags = Array.from(new Set([...tags, "bolsonaro"]));
 
   return {

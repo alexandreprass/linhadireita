@@ -19,7 +19,7 @@ export function Header() {
         </Link>
 
         <nav className="ml-2 hidden flex-1 items-center gap-1 lg:flex">
-          {CATEGORIES.slice(0, 6).map((c) => (
+          {CATEGORIES.map((c) => (
             <Link
               key={c.slug}
               href={`/categoria/${c.slug}`}

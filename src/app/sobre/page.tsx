@@ -13,7 +13,7 @@ export default function AboutPage() {
       <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#009c3b]">Sobre</p>
       <h1 className="font-serif text-3xl text-white md:text-4xl">LINHA DIREITA</h1>
       <p className="mt-4 text-lg leading-relaxed text-zinc-400">
-        Portal de notícias com cobertura clara e objetiva de política, economia, Brasil e mundo.
+        Portal de notícias com cobertura de política, segurança, eleições, Congresso, STF e EUA.
       </p>
 
       <h2 className="mt-10 font-serif text-2xl text-white">Assuntos</h2>

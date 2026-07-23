@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (isCollectRunning()) {
     return NextResponse.json({ ok: false, message: "Coleta já em andamento" }, { status: 409 });
   }
-  const max = Number(req.nextUrl.searchParams.get("max") || 6);
+  const max = Number(req.nextUrl.searchParams.get("max") || process.env.MAX_REWRITE_PER_CYCLE || 2);
   const result = await runCollectionCycle(max);
   return NextResponse.json(result);
 }

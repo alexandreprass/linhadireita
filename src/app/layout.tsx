@@ -28,13 +28,13 @@ export const metadata: Metadata = {
     template: "%s · LINHA DIREITA",
   },
   description:
-    "Portal de notícias LINHA DIREITA. Política, Brasil, Mundo, Economia e mais — cobertura clara e objetiva.",
+    "Portal de notícias LINHA DIREITA. Política, segurança, eleições, Congresso, STF e EUA.",
   openGraph: {
     type: "website",
     locale: "pt_BR",
     siteName: "LINHA DIREITA",
     title: "LINHA DIREITA — Notícias com clareza",
-    description: "Notícias de política, economia, Brasil e mundo.",
+    description: "Política, segurança, eleições, Congresso, STF e EUA.",
     images: [{ url: "/logo.png" }],
   },
   twitter: {

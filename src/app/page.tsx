@@ -25,7 +25,7 @@ export default async function HomePage() {
             O que está acontecendo agora
           </h1>
           <p className="mt-2 max-w-xl text-sm text-zinc-400 md:text-base">
-            Cobertura de política, economia, Brasil e mundo.
+            Política, segurança, eleições, Congresso, STF e EUA.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

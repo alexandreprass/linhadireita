@@ -6,7 +6,7 @@ import "dotenv/config";
 import { runCollectionCycle } from "../src/lib/collector";
 
 async function main() {
-  const result = await runCollectionCycle(Number(process.env.MAX_REWRITE_PER_CYCLE || 5));
+  const result = await runCollectionCycle(Number(process.env.MAX_REWRITE_PER_CYCLE || 2));
   console.log(JSON.stringify(result, null, 2));
 }
 

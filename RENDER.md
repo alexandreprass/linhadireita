@@ -24,8 +24,11 @@ ADMIN_PASSWORD=84074070
 ADMIN_SESSION_SECRET=qualquer-texto-longo-aleatorio
 CRON_SECRET=outro-segredo-aleatorio
 NEXT_PUBLIC_SITE_URL=https://SEU-SERVICO.onrender.com
-MAX_REWRITE_PER_CYCLE=6
+MAX_REWRITE_PER_CYCLE=2
 ```
+
+Cron: a cada **1 hora** (não a cada 30 min), para bater com o limite de 2 notícias/hora.
+
 
 > **Não precisa de DATABASE_URL** — o projeto usa SQLite embutido (`prisma/linhadireita.db`).  
 > Os dados podem zerar se o Render recriar o container. Depois você pode migrar para Postgres.

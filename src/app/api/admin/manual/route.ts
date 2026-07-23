@@ -4,7 +4,7 @@ import { isBlockedContent } from "@/lib/filter";
 import { generateNewsImage } from "@/lib/grok";
 import { prisma } from "@/lib/db";
 import { uniqueSlug } from "@/lib/slug";
-import { isValidCategory } from "@/lib/categories";
+import { normalizeCategory } from "@/lib/categories";
 
 /**
  * Publicação manual de notícia pelo admin.
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const title = String(body.title || "").trim();
   const lead = String(body.lead || "").trim();
   const content = String(body.body || "").trim();
-  let category = String(body.category || "geral").trim().toLowerCase();
+  let category = String(body.category || "politica").trim().toLowerCase();
   const tags = Array.isArray(body.tags)
     ? body.tags.map((t: unknown) => String(t).toLowerCase().trim()).filter(Boolean)
     : String(body.tags || "")
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: blocked.reason }, { status: 400 });
   }
 
-  if (!isValidCategory(category)) category = "geral";
+  category = normalizeCategory(category);
 
   if (generateImage && !imageUrl) {
     imageUrl = await generateNewsImage({ title, lead, category });

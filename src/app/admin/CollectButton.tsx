@@ -12,7 +12,7 @@ export function CollectButton() {
     setLoading(true);
     setMsg("Coletando… pode levar alguns minutos.");
     try {
-      const res = await fetch("/api/admin/articles?max=6", { method: "POST" });
+      const res = await fetch("/api/admin/articles?max=2", { method: "POST" });
       const data = await res.json();
       setMsg(data.message || JSON.stringify(data));
       router.refresh();

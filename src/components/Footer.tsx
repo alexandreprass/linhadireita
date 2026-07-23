@@ -17,7 +17,7 @@ export function Footer() {
             />
           </Link>
           <p className="max-w-sm text-sm leading-relaxed text-zinc-400">
-            Portal de notícias com cobertura de política, economia, Brasil e mundo.
+            Política, segurança, eleições, Congresso, STF e EUA.
           </p>
         </div>
         <div>

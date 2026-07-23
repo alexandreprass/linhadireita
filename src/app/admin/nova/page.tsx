@@ -6,15 +6,13 @@ import Link from "next/link";
 
 const CATEGORIES = [
   "politica",
-  "brasil",
-  "mundo",
-  "economia",
-  "tecnologia",
+  "eleicoes",
   "seguranca",
-  "saude",
-  "cultura",
-  "esporte",
-  "geral",
+  "stf",
+  "congresso",
+  "eua",
+  "economia",
+  "brasil",
 ];
 
 export default function NovaNoticiaPage() {

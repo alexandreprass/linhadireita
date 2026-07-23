@@ -36,17 +36,17 @@ export default function AdminLoginPage() {
 
   return (
     <div className="mx-auto max-w-md">
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-red-400">Admin</p>
+      <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#009c3b]">Admin</p>
       <h1 className="font-serif text-3xl text-white">Entrar no painel</h1>
-      <p className="mt-2 text-sm text-zinc-400">Acesso restrito ao administrador do LINHA DIREITA.</p>
+      <p className="mt-2 text-sm text-zinc-400">Acesso restrito.</p>
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-white/10 bg-[#141820] p-6">
+      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-white/10 bg-[#0f1520] p-6">
         <label className="block text-sm">
           <span className="mb-1.5 block text-zinc-400">Usuário</span>
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-red-500/50"
+            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-[#009c3b]/50"
             autoComplete="username"
           />
         </label>
@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-red-500/50"
+            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-[#009c3b]/50"
             autoComplete="current-password"
           />
         </label>
@@ -64,7 +64,7 @@ export default function AdminLoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+          className="w-full rounded-full bg-[#009c3b] py-2.5 text-sm font-semibold text-white hover:bg-[#00b347] disabled:opacity-60"
         >
           {loading ? "Entrando..." : "Entrar"}
         </button>

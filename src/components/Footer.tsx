@@ -1,51 +1,44 @@
+import Image from "next/image";
 import Link from "next/link";
-import { SOURCES } from "@/lib/sources";
+import { CATEGORIES } from "@/lib/categories";
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-white/10 bg-black/30">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-3">
+    <footer className="mt-auto border-t border-white/10 bg-black/40">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-2">
         <div>
-          <div className="mb-3 flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-red-600 to-orange-500 text-sm font-bold text-white">
-              LD
-            </span>
-            <div>
-              <p className="font-bold text-white">LINHA DIREITA</p>
-              <p className="text-xs text-zinc-500">Conteúdo reescrito · não copiado</p>
-            </div>
-          </div>
+          <Link href="/" className="mb-4 inline-block">
+            <Image
+              src="/logo.png"
+              alt="Linha Direita"
+              width={180}
+              height={64}
+              className="h-14 w-auto object-contain"
+            />
+          </Link>
           <p className="max-w-sm text-sm leading-relaxed text-zinc-400">
-            Portal automatizado com reescrita original via Grok (xAI). Sempre citamos a fonte e
-            oferecemos o link da reportagem original.
+            Portal de notícias com cobertura de política, economia, Brasil e mundo.
           </p>
         </div>
         <div>
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Fontes</h4>
-          <ul className="space-y-2 text-sm text-zinc-300">
-            {SOURCES.map((s) => (
-              <li key={s.id}>
-                <a href={s.website} target="_blank" rel="noopener noreferrer" className="hover:text-white">
-                  {s.name}
-                </a>
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Assuntos
+          </h4>
+          <ul className="grid grid-cols-2 gap-2 text-sm text-zinc-300">
+            {CATEGORIES.slice(0, 8).map((c) => (
+              <li key={c.slug}>
+                <Link href={`/categoria/${c.slug}`} className="hover:text-[#ffdf00]">
+                  {c.label}
+                </Link>
               </li>
             ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Portal</h4>
-          <ul className="space-y-2 text-sm text-zinc-300">
-            <li><Link href="/" className="hover:text-white">Últimas</Link></li>
-            <li><Link href="/busca" className="hover:text-white">Buscar</Link></li>
-            <li><Link href="/sobre" className="hover:text-white">Sobre</Link></li>
-            <li><Link href="/admin" className="hover:text-white">Admin</Link></li>
           </ul>
         </div>
       </div>
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-4 text-xs text-zinc-500">
           <span>© {new Date().getFullYear()} Linha Direita</span>
-          <span>Powered by Grok · xAI</span>
+          <span className="text-zinc-600">Notícias com clareza</span>
         </div>
       </div>
     </footer>

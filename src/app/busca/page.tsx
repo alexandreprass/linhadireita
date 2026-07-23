@@ -15,7 +15,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const q = sp.q?.trim();
   return {
     title: q ? `Busca: ${q}` : "Buscar notícias",
-    description: "Busque notícias no LINHA DIREITA por tema, pessoa ou palavra-chave.",
+    description: "Busque notícias no LINHA DIREITA.",
   };
 }
 
@@ -33,12 +33,14 @@ export default async function SearchPage({ searchParams }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-red-400">Busca</p>
+      <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#009c3b]">Busca</p>
       <h1 className="font-serif text-3xl text-white md:text-4xl">
         {q ? "Resultados" : "Buscar notícias"}
       </h1>
       <p className="mt-2 text-sm text-zinc-400">
-        {q ? `${total} resultado${total === 1 ? "" : "s"} para “${q}”` : "Pesquise por tema, cidade ou palavra-chave."}
+        {q
+          ? `${total} resultado${total === 1 ? "" : "s"} para “${q}”`
+          : "Pesquise por tema, cidade ou palavra-chave."}
       </p>
 
       <div className="mt-6 max-w-lg">
@@ -47,13 +49,15 @@ export default async function SearchPage({ searchParams }: Props) {
 
       {!q ? (
         <div className="mt-10">
-          <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Categorias</h2>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">
+            Categorias
+          </h2>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => (
               <Link
                 key={c.slug}
                 href={`/categoria/${c.slug}`}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/10"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 hover:border-[#ffdf00]/40 hover:text-[#ffdf00]"
               >
                 {c.label}
               </Link>
@@ -62,7 +66,10 @@ export default async function SearchPage({ searchParams }: Props) {
         </div>
       ) : items.length === 0 ? (
         <div className="mt-8">
-          <EmptyState title={`Nada encontrado para “${q}”`} description="Tente outra palavra-chave ou explore as categorias." />
+          <EmptyState
+            title={`Nada encontrado para “${q}”`}
+            description="Tente outra palavra-chave ou explore as categorias."
+          />
         </div>
       ) : (
         <>

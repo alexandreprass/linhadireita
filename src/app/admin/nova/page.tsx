@@ -79,7 +79,7 @@ export default function NovaNoticiaPage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-red-400">Admin</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#009c3b]">Admin</p>
           <h1 className="font-serif text-3xl text-white">Publicar notícia manual</h1>
         </div>
         <Link href="/admin" className="text-sm text-zinc-400 hover:text-white">
@@ -94,7 +94,7 @@ export default function NovaNoticiaPage() {
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-red-500/50"
+            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-[#009c3b]/50"
           />
         </label>
         <label className="block text-sm">
@@ -102,7 +102,7 @@ export default function NovaNoticiaPage() {
           <input
             value={lead}
             onChange={(e) => setLead(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-red-500/50"
+            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-[#009c3b]/50"
           />
         </label>
         <label className="block text-sm">
@@ -112,7 +112,7 @@ export default function NovaNoticiaPage() {
             rows={10}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-red-500/50"
+            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-[#009c3b]/50"
           />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -135,7 +135,7 @@ export default function NovaNoticiaPage() {
             <input
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-red-500/50"
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-[#009c3b]/50"
               placeholder="bolsonaro, economia"
             />
           </label>
@@ -145,13 +145,13 @@ export default function NovaNoticiaPage() {
           <input
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-red-500/50"
+            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-[#009c3b]/50"
             placeholder="https://..."
           />
         </label>
         <label className="flex items-center gap-2 text-sm text-zinc-300">
           <input type="checkbox" checked={generateImage} onChange={(e) => setGenerateImage(e.target.checked)} />
-          Gerar imagem com Grok Imagine se não houver URL
+          Gerar imagem automaticamente se não houver URL
         </label>
         <label className="flex items-center gap-2 text-sm text-zinc-300">
           <input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
@@ -161,7 +161,7 @@ export default function NovaNoticiaPage() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-full bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+          className="rounded-full bg-[#009c3b] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#00b347] disabled:opacity-60"
         >
           {loading ? "Publicando..." : "Publicar agora"}
         </button>

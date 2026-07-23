@@ -1,19 +1,21 @@
+import Image from "next/image";
 import Link from "next/link";
 import { CATEGORIES } from "@/lib/categories";
 import { SearchBox } from "./SearchBox";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b0d12]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070b14]/92 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
         <Link href="/" className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-red-600 via-rose-500 to-orange-500 text-sm font-bold tracking-tight text-white shadow-lg shadow-red-900/40">
-            LD
-          </span>
-          <span className="leading-tight">
-            <span className="block text-base font-bold tracking-tight text-white">LINHA DIREITA</span>
-            <span className="block text-xs text-zinc-400">Notícias com clareza</span>
-          </span>
+          <Image
+            src="/logo.png"
+            alt="Linha Direita"
+            width={160}
+            height={56}
+            className="h-12 w-auto object-contain md:h-14"
+            priority
+          />
         </Link>
 
         <nav className="ml-2 hidden flex-1 items-center gap-1 lg:flex">
@@ -21,12 +23,15 @@ export function Header() {
             <Link
               key={c.slug}
               href={`/categoria/${c.slug}`}
-              className="rounded-full px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+              className="rounded-full px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-[#ffdf00]"
             >
               {c.label}
             </Link>
           ))}
-          <Link href="/busca" className="rounded-full px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white">
+          <Link
+            href="/busca"
+            className="rounded-full px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-[#ffdf00]"
+          >
             Busca
           </Link>
         </nav>
@@ -42,7 +47,7 @@ export function Header() {
             <Link
               key={c.slug}
               href={`/categoria/${c.slug}`}
-              className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300"
+              className="shrink-0 rounded-full border border-[#009c3b]/30 bg-[#009c3b]/10 px-3 py-1 text-xs font-medium text-zinc-200"
             >
               {c.label}
             </Link>

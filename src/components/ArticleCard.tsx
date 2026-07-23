@@ -17,7 +17,7 @@ type Props = {
 
 export function ArticleCard({ article }: Props) {
   return (
-    <article className="group overflow-hidden rounded-2xl border border-white/10 bg-[#141820] transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#181e2a]">
+    <article className="group overflow-hidden rounded-2xl border border-white/10 bg-[#0f1520] transition duration-300 hover:-translate-y-0.5 hover:border-[#009c3b]/35 hover:bg-[#121a28]">
       <Link href={`/noticia/${article.slug}`} className="flex h-full flex-col">
         <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
           {article.imageUrl ? (
@@ -29,7 +29,7 @@ export function ArticleCard({ article }: Props) {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-zinc-800 via-zinc-900 to-black" />
+            <div className="h-full w-full bg-gradient-to-br from-[#002776]/80 via-zinc-900 to-black" />
           )}
           <span className="absolute bottom-3 left-3 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
             {categoryLabel(article.category)}
@@ -37,7 +37,7 @@ export function ArticleCard({ article }: Props) {
         </div>
         <div className="flex flex-1 flex-col gap-2 p-4">
           <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-            <span className="font-medium text-zinc-400">{article.sourceName || "Linha Direita"}</span>
+            <span className="font-medium text-zinc-400">Linha Direita</span>
             <span>·</span>
             <time>{formatRelative(article.publishedAt)}</time>
           </div>

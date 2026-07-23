@@ -37,9 +37,11 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   return (
     <div>
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-red-400">Categoria</p>
+      <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#009c3b]">Categoria</p>
       <h1 className="font-serif text-3xl text-white md:text-4xl">{categoryLabel(slug)}</h1>
-      <p className="mt-2 text-sm text-zinc-400">{total} matéria{total === 1 ? "" : "s"}</p>
+      <p className="mt-2 text-sm text-zinc-400">
+        {total} matéria{total === 1 ? "" : "s"}
+      </p>
 
       {items.length === 0 ? (
         <div className="mt-8">
@@ -56,7 +58,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       {totalPages > 1 ? (
         <div className="mt-10 flex items-center justify-center gap-4 text-sm text-zinc-400">
           {page > 1 ? (
-            <a href={`?page=${page - 1}`} className="rounded-full border border-white/10 px-4 py-2 text-white">
+            <a
+              href={`?page=${page - 1}`}
+              className="rounded-full border border-white/10 px-4 py-2 text-white hover:border-[#009c3b]/40"
+            >
               ← Anterior
             </a>
           ) : null}
@@ -64,7 +69,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             Página {page} de {totalPages}
           </span>
           {page < totalPages ? (
-            <a href={`?page=${page + 1}`} className="rounded-full border border-white/10 px-4 py-2 text-white">
+            <a
+              href={`?page=${page + 1}`}
+              className="rounded-full border border-white/10 px-4 py-2 text-white hover:border-[#009c3b]/40"
+            >
               Próxima →
             </a>
           ) : null}

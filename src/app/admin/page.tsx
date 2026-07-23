@@ -28,14 +28,14 @@ export default async function AdminPage() {
     <div>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-red-400">Admin</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#009c3b]">Admin</p>
           <h1 className="font-serif text-3xl text-white">Painel LINHA DIREITA</h1>
           <p className="mt-2 text-sm text-zinc-400">{total} notícias publicadas</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
             href="/admin/nova"
-            className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
+            className="rounded-full bg-[#009c3b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00b347]"
           >
             + Nova notícia
           </Link>
@@ -60,7 +60,7 @@ export default async function AdminPage() {
               <tr key={a.id} className="border-t border-white/10">
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-1">
-                    <Link href={`/noticia/${a.slug}`} className="font-medium text-white hover:text-red-300">
+                    <Link href={`/noticia/${a.slug}`} className="font-medium text-white hover:text-[#ffdf00]">
                       {a.featured ? "⭐ " : ""}
                       {a.title}
                     </Link>

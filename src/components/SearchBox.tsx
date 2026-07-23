@@ -18,7 +18,7 @@ export function SearchBox() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+    <form onSubmit={onSubmit} className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 focus-within:border-[#009c3b]/50">
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -28,7 +28,7 @@ export function SearchBox() {
       />
       <button
         type="submit"
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-zinc-300 transition hover:bg-white/15 hover:text-white"
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#009c3b]/20 text-[#ffdf00] transition hover:bg-[#009c3b]/35"
         aria-label="Buscar"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

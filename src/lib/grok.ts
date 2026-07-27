@@ -170,11 +170,133 @@ export async function rewriteArticle(raw: RawArticle): Promise<RewrittenArticle>
   };
 }
 
+/**
+ * Detecta pessoas/instituições no texto para a imagem ser fiel ao artigo
+ * (ex.: Trump na foto quando a notícia é sobre Trump).
+ */
+function extractVisualSubjects(text: string): {
+  people: string[];
+  places: string[];
+  sceneHints: string[];
+} {
+  const blob = (text || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const peopleRules: [RegExp, string][] = [
+    [/\btrump\b|\bdonald trump\b/, "Donald Trump (recognizable likeness, US President, suit, blond hair)"],
+    [/\bjair bolsonaro\b|\bbolsonaro\b(?!\s*flavio)/, "Jair Bolsonaro (recognizable likeness, Brazilian politician)"],
+    [/\bflavio bolsonaro\b|\bflávio bolsonaro\b/, "Flávio Bolsonaro (recognizable likeness, Brazilian senator)"],
+    [/\bmichele bolsonaro\b|\bmichele\b/, "Michelle Bolsonaro"],
+    [/\belon musk\b|\bmusk\b/, "Elon Musk (recognizable likeness)"],
+    [/\bpablo marcal\b|\bpablo marçal\b/, "Pablo Marçal"],
+    [/\bvorcaro\b/, "Daniel Vorcaro (Brazilian banker)"],
+    [/\bmoraes\b|\balexandre de moraes\b/, "Alexandre de Moraes (Brazilian Supreme Court justice, STF)"],
+    [/\bgilmar\b/, "Gilmar Mendes (STF justice)"],
+    [/\bbiden\b/, "Joe Biden"],
+    [/\bvance\b/, "JD Vance"],
+    [/\bnetanyahu\b/, "Benjamin Netanyahu"],
+    [/\bputin\b/, "Vladimir Putin"],
+    [/\bzelensky\b|\bzelenski\b/, "Volodymyr Zelensky"],
+    [/\bxavier\b/, "Cláudio Xavier or relevant Brazilian public figure if context fits"],
+  ];
+
+  const placeRules: [RegExp, string][] = [
+    [/\bstf\b|\bsupremo\b/, "Supreme Federal Court building in Brasília (STF), modern glass facade"],
+    [/\bcongresso\b|\bsenado\b|\bcamara\b|\bcâmara\b/, "National Congress of Brazil in Brasília, twin towers and dome"],
+    [/\bplanalto\b/, "Palácio do Planalto in Brasília"],
+    [/\bcasa branca\b|\bwhite house\b/, "White House exterior, Washington DC"],
+    [/\beua\b|\bestados unidos\b|\bwashington\b/, "United States political setting, Washington DC"],
+    [/\bbrasilia\b|\bbrasília\b/, "Brasília, Brazil monumental architecture"],
+    [/\bwall street\b|\bbanco master\b|\bbolsa\b/, "modern bank headquarters / financial district exterior"],
+    [/\bpolicia\b|\bsegurança\b|\bseguranca\b/, "Brazilian police operation or security forces scene"],
+  ];
+
+  const sceneRules: [RegExp, string][] = [
+    [/\beleic|\burna\b|\btse\b|\bcampanha\b/, "election campaign rally or voting scene"],
+    [/\bprisao\b|\bprisão\b|\bpreso\b|\bcadeia\b/, "courthouse steps / justice system scene (no gore)"],
+    [/\bmanifest|\bprotesto\b|\bato\b/, "large political rally or street demonstration"],
+    [/\bguerra\b|\bataque\b|\bmissil\b/, "international conflict news photo style (no graphic violence)"],
+    [/\beconomia\b|\binfla|\bjuros\b|\bdolar\b|\bdólar\b/, "economic news visual: trading floor or government finance building"],
+  ];
+
+  const people: string[] = [];
+  for (const [re, label] of peopleRules) {
+    if (re.test(blob) && !people.includes(label)) people.push(label);
+  }
+
+  const places: string[] = [];
+  for (const [re, label] of placeRules) {
+    if (re.test(blob) && !places.includes(label)) places.push(label);
+  }
+
+  const sceneHints: string[] = [];
+  for (const [re, label] of sceneRules) {
+    if (re.test(blob) && !sceneHints.includes(label)) sceneHints.push(label);
+  }
+
+  return { people, places, sceneHints };
+}
+
+/** Monta prompt detalhado para a imagem parecer o assunto real do artigo. */
+export function buildNewsImagePrompt(opts: {
+  title: string;
+  lead?: string;
+  category?: string;
+  originalTitle?: string;
+  tags?: string[];
+}): string {
+  const fullText = [opts.title, opts.lead, opts.originalTitle, ...(opts.tags || [])]
+    .filter(Boolean)
+    .join(" ");
+  const { people, places, sceneHints } = extractVisualSubjects(fullText);
+
+  const mustShow: string[] = [];
+  if (people.length) {
+    mustShow.push(
+      `MUST clearly depict these real public figures as the main visual focus (accurate recognizable appearance): ${people.join("; ")}.`
+    );
+  }
+  if (places.length) {
+    mustShow.push(`Setting / landmark must match: ${places.join("; ")}.`);
+  }
+  if (sceneHints.length) {
+    mustShow.push(`Scene type: ${sceneHints.join("; ")}.`);
+  }
+  if (!people.length && !places.length) {
+    mustShow.push(
+      `Invent a concrete photorealistic news scene that literally illustrates the headline, not a generic abstract image. Headline: "${opts.title}".`
+    );
+  }
+
+  return [
+    "Ultra-realistic photojournalism news photograph for a major newspaper website.",
+    "Looks like an Associated Press / Reuters press photo shot on a full-frame DSLR, 85mm lens, natural light.",
+    `Headline to illustrate EXACTLY: ${opts.title}.`,
+    opts.lead ? `Article summary (use for scene details): ${opts.lead.slice(0, 280)}.` : "",
+    opts.originalTitle && opts.originalTitle !== opts.title
+      ? `Original headline context: ${opts.originalTitle.slice(0, 160)}.`
+      : "",
+    `Category: ${opts.category || "politica"}.`,
+    ...mustShow,
+    people.length
+      ? "The named person(s) must be clearly visible in the frame (face recognizable), not a silhouette, not a tiny figure in the background."
+      : "",
+    "Composition: single strong subject, editorial framing, 16:9 horizontal, shallow depth of field optional.",
+    "True-to-life skin tones and clothing; authentic location; no fantasy, no surreal elements.",
+    "Style: documentary realism only — NOT illustration, NOT cartoon, NOT 3D render, NOT AI-art look, NOT stock-photo fake smiles.",
+    "CRITICAL: ZERO text in the image — no captions, no logos, no watermarks, no banners, no site name, no words, no letters, no numbers as overlay.",
+    "Do not write 'Linha Direita' or any brand on the photo.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 /** Gera imagem ilustrativa com Grok Imagine. Retorna URL ou null. */
 export async function generateNewsImage(opts: {
   title: string;
   lead?: string;
   category?: string;
+  originalTitle?: string;
+  tags?: string[];
 }): Promise<string | null> {
   const key = apiKey();
   if (!key) {
@@ -182,22 +304,8 @@ export async function generateNewsImage(opts: {
     return null;
   }
 
-  // Só imagem realista do assunto — sem texto, logo ou nome do site
-  const prompt = [
-    "Photorealistic documentary news photograph, extremely realistic, looks like a real press photo taken with a DSLR camera.",
-    `Subject matter (show the real-world scene related to this news only): ${opts.title}.`,
-    opts.lead ? `Scene context: ${opts.lead.slice(0, 200)}.` : "",
-    `News category: ${opts.category || "politica"}.`,
-    "Natural lighting, authentic Brazilian or international setting as the topic requires,",
-    "sharp detail, shallow depth of field when appropriate, professional photojournalism style,",
-    "true-to-life colors, no CGI look, no illustration, no cartoon, no 3D render.",
-    "CRITICAL: absolutely NO text, NO letters, NO words, NO numbers as overlay,",
-    "NO watermarks, NO logos, NO brand names, NO site name, NO captions, NO banners,",
-    "NO 'Linha Direita', NO writing of any kind on the image.",
-    "Horizontal 16:9 composition suitable for a news article header.",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const prompt = buildNewsImagePrompt(opts);
+  console.log("[grok] prompt imagem:", prompt.slice(0, 280) + "…");
 
   const res = await fetch(`${XAI_BASE}/images/generations`, {
     method: "POST",

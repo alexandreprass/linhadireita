@@ -476,6 +476,8 @@ export async function runCollectionCycle(
             title: rewritten.title,
             lead: rewritten.lead,
             category: rewritten.category,
+            originalTitle: raw.originalTitle,
+            tags: rewritten.tags,
           });
           if (generated) {
             imageUrl = generated;

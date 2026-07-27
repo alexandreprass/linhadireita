@@ -52,7 +52,12 @@ export async function POST(req: NextRequest) {
   category = normalizeCategory(category);
 
   if (generateImage && !imageUrl) {
-    imageUrl = await generateNewsImage({ title, lead, category });
+    imageUrl = await generateNewsImage({
+      title,
+      lead,
+      category,
+      tags,
+    });
   }
 
   if (featured) {

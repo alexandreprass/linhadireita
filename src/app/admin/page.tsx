@@ -32,17 +32,24 @@ export default async function AdminPage() {
           <h1 className="font-serif text-3xl text-white">Painel LINHA DIREITA</h1>
           <p className="mt-2 text-sm text-zinc-400">{total} notícias publicadas</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/nova"
-            className="rounded-full bg-[#009c3b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00b347]"
-          >
-            + Nova notícia
-          </Link>
+        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Link
+              href="/admin/nova"
+              className="rounded-full bg-[#009c3b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00b347]"
+            >
+              + Nova notícia
+            </Link>
+            <LogoutButton />
+          </div>
           <CollectButton />
-          <LogoutButton />
         </div>
       </div>
+
+      <p className="mb-6 text-xs text-zinc-500">
+        Escolha quantas notícias coletar e clique em “Coletar agora”. Duplicatas das últimas 24h e
+        links já usados são ignorados automaticamente.
+      </p>
 
       <div className="overflow-hidden rounded-2xl border border-white/10">
         <table className="w-full text-left text-sm">

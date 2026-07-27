@@ -1,4 +1,5 @@
 import { ArticleCard } from "@/components/ArticleCard";
+import { ShareButtons } from "@/components/ShareButtons";
 import { categoryLabel } from "@/lib/categories";
 import { formatDate } from "@/lib/format";
 import { getBySlug, parseTags, relatedArticles } from "@/lib/articles";
@@ -10,18 +11,49 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
+function siteOrigin() {
+  return (process.env.NEXT_PUBLIC_SITE_URL || "https://linhadireita.onrender.com").replace(
+    /\/$/,
+    ""
+  );
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const article = await getBySlug(slug);
   if (!article) return { title: "Notícia não encontrada" };
+
+  const origin = siteOrigin();
+  const url = `${origin}/noticia/${article.slug}`;
+  const description = (article.lead || article.title).slice(0, 200);
+  const image = article.imageUrl || `${origin}/logo.png`;
+
   return {
     title: article.title,
-    description: article.lead || article.title,
+    description,
+    alternates: { canonical: url },
     openGraph: {
       title: article.title,
-      description: article.lead || article.title,
+      description,
       type: "article",
-      images: article.imageUrl ? [{ url: article.imageUrl }] : undefined,
+      url,
+      siteName: "LINHA DIREITA",
+      locale: "pt_BR",
+      publishedTime: article.publishedAt?.toISOString?.() || undefined,
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: article.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description,
+      images: [image],
     },
   };
 }
@@ -37,6 +69,8 @@ export default async function ArticlePage({ params }: Props) {
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean);
+
+  const shareUrl = `${siteOrigin()}/noticia/${article.slug}`;
 
   return (
     <article className="mx-auto max-w-4xl">
@@ -65,7 +99,7 @@ export default async function ArticlePage({ params }: Props) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={article.imageUrl}
-            alt=""
+            alt={article.title}
             className="max-h-[460px] w-full object-cover"
             referrerPolicy="no-referrer"
           />
@@ -77,6 +111,8 @@ export default async function ArticlePage({ params }: Props) {
           <p key={i}>{p}</p>
         ))}
       </div>
+
+      <ShareButtons url={shareUrl} title={article.title} lead={article.lead} />
 
       {tags.length > 0 ? (
         <ul className="mt-8 flex flex-wrap gap-2">

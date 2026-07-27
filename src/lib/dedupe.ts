@@ -1,7 +1,7 @@
 /**
  * Anti-repetição de notícias:
- * - link original já visto (SeenLink / originalLink)
- * - título muito parecido com matérias recentes
+ * - link original já visto (qualquer data)
+ * - título/assunto similar às matérias das últimas 24 horas
  */
 
 import { prisma } from "./db";
@@ -49,19 +49,22 @@ export type DedupeHit = {
   matchedTitle?: string;
 };
 
+const HOURS_24_MS = 24 * 60 * 60 * 1000;
+
 /**
- * Verifica se a pauta já foi coberta (link, título original ou reescrito).
- * threshold ~0.55 evita "mesmo assunto" com título levemente diferente.
+ * Verifica se a pauta já foi coberta.
+ * - Link: nunca republica o mesmo link (histórico completo)
+ * - Título/assunto: bloqueia se similar a notícia das últimas 24h
  */
 export async function isDuplicateNews(opts: {
   originalLink?: string | null;
   originalTitle?: string | null;
   title?: string | null;
   threshold?: number;
-  lookback?: number;
+  hoursWindow?: number;
 }): Promise<DedupeHit> {
-  const threshold = opts.threshold ?? 0.55;
-  const lookback = opts.lookback ?? 120;
+  const threshold = opts.threshold ?? 0.5;
+  const hoursWindow = opts.hoursWindow ?? 24;
 
   const link = (opts.originalLink || "").trim();
   if (link) {
@@ -75,11 +78,19 @@ export async function isDuplicateNews(opts: {
     }
   }
 
+  const since = new Date(Date.now() - hoursWindow * 60 * 60 * 1000);
+
   const candidates = await prisma.article.findMany({
-    where: { status: "published" },
+    where: {
+      status: "published",
+      OR: [
+        { publishedAt: { gte: since } },
+        { createdAt: { gte: since } },
+      ],
+    },
     orderBy: { publishedAt: "desc" },
-    take: lookback,
-    select: { title: true, originalTitle: true, slug: true },
+    take: 200,
+    select: { title: true, originalTitle: true, slug: true, publishedAt: true },
   });
 
   const incoming = [opts.title, opts.originalTitle].filter(Boolean).map(String);
@@ -88,11 +99,10 @@ export async function isDuplicateNews(opts: {
     const existing = [cand.title, cand.originalTitle].filter(Boolean).map(String);
     for (const a of incoming) {
       for (const b of existing) {
-        // Match quase idêntico
         if (normalizeText(a) === normalizeText(b) && normalizeText(a).length > 10) {
           return {
             duplicate: true,
-            reason: "título idêntico",
+            reason: `título idêntico (últimas ${hoursWindow}h)`,
             matchedTitle: cand.title,
           };
         }
@@ -100,13 +110,16 @@ export async function isDuplicateNews(opts: {
         if (sim >= threshold) {
           return {
             duplicate: true,
-            reason: `assunto similar (${Math.round(sim * 100)}%)`,
+            reason: `assunto similar nas últimas ${hoursWindow}h (${Math.round(sim * 100)}%)`,
             matchedTitle: cand.title,
           };
         }
       }
     }
   }
+
+  // Também evita reprocessar o mesmo título se SeenLink não pegou (edge case)
+  void HOURS_24_MS;
 
   return { duplicate: false, reason: "" };
 }

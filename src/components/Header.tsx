@@ -7,14 +7,14 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#06090f]/85 backdrop-blur-2xl">
       <div className="brasil-stripe" />
-      <div className="site-shell flex flex-wrap items-center gap-3 py-3">
+      <div className="site-shell flex flex-wrap items-center gap-3 py-2 md:py-3">
         <Link href="/" className="flex items-center gap-3 transition hover:opacity-95">
           <Image
             src="/logo.png"
             alt="Linha Direita"
-            width={320}
-            height={112}
-            className="h-20 w-auto object-contain drop-shadow-[0_0_24px_rgba(255,223,0,0.12)] md:h-24"
+            width={640}
+            height={224}
+            className="h-40 w-auto max-h-[10rem] object-contain drop-shadow-[0_0_28px_rgba(255,223,0,0.14)] md:h-48 md:max-h-[12rem]"
             priority
           />
         </Link>

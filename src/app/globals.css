@@ -70,6 +70,40 @@ body {
   backdrop-filter: blur(12px);
 }
 
+/* Scrollbar do feed no tema do site */
+.feed-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #009c3b rgba(255, 255, 255, 0.06);
+}
+
+.feed-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.feed-scroll::-webkit-scrollbar-track {
+  margin: 10px 0;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.feed-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #009c3b 0%, #002776 100%);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.feed-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00b347 0%, #ffdf00 100%);
+  background-clip: padding-box;
+}
+
+.feed-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 .feed-dot {
   display: block;
   width: 8px;

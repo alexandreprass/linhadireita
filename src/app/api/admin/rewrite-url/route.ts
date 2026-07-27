@@ -11,50 +11,119 @@ import {
   rewriteArticle,
 } from "@/lib/grok";
 import { pruneOldArticles } from "@/lib/retention";
+import {
+  createRewriteJob,
+  getRewriteJob,
+  updateRewriteJob,
+} from "@/lib/rewriteJobs";
 import { scrapeArticleUrl } from "@/lib/scrape";
 import { uniqueSlug } from "@/lib/slug";
 
+// Plataformas que respeitam (Vercel etc.). No Render o timeout do proxy ainda existe,
+// por isso o trabalho roda em background e o cliente faz poll.
+export const maxDuration = 300;
+export const dynamic = "force-dynamic";
+
 /**
- * Admin cola um link de notícia → extrai conteúdo → reescreve com Grok → publica.
- * useSameImage: true = usa og:image da matéria; false = gera com Grok Imagine.
+ * GET ?jobId=... → status do job
+ * POST { url, useSameImage, featured } → inicia job e retorna jobId na hora
  */
+export async function GET(req: NextRequest) {
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const jobId = req.nextUrl.searchParams.get("jobId") || "";
+  if (!jobId) {
+    return NextResponse.json({ error: "jobId obrigatório" }, { status: 400 });
+  }
+  const job = getRewriteJob(jobId);
+  if (!job) {
+    return NextResponse.json({ error: "Job não encontrado ou expirado" }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true, job });
+}
+
 export async function POST(req: NextRequest) {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => ({}));
+  let body: Record<string, unknown> = {};
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "JSON inválido no pedido" }, { status: 400 });
+  }
+
   const url = String(body.url || "").trim();
-  const useSameImage = body.useSameImage !== false; // padrão: usar mesma imagem
+  const useSameImage = body.useSameImage !== false;
   const featured = Boolean(body.featured);
 
   if (!url) {
     return NextResponse.json({ error: "Cole o link da notícia" }, { status: 400 });
   }
 
+  const job = createRewriteJob();
+  updateRewriteJob(job.id, { message: "Lendo a matéria…" });
+
+  // Processa em background — resposta imediata evita timeout vazio
+  void processRewriteJob(job.id, url, useSameImage, featured).catch((err) => {
+    console.error("[rewrite-url] background fatal", err);
+    updateRewriteJob(job.id, {
+      status: "error",
+      error: err instanceof Error ? err.message : "Erro inesperado",
+      message: "Falhou",
+      finishedAt: Date.now(),
+    });
+  });
+
+  return NextResponse.json({
+    ok: true,
+    started: true,
+    jobId: job.id,
+    message: "Reescrita iniciada. Acompanhe o status…",
+  });
+}
+
+async function processRewriteJob(
+  jobId: string,
+  url: string,
+  useSameImage: boolean,
+  featured: boolean
+) {
   try {
+    updateRewriteJob(jobId, { message: "Extraindo texto e imagem da página…" });
     const scraped = await scrapeArticleUrl(url);
 
     const blocked = isBlockedContent(scraped.title, scraped.summary, scraped.body);
     if (blocked.blocked) {
-      return NextResponse.json({ error: blocked.reason }, { status: 400 });
+      updateRewriteJob(jobId, {
+        status: "error",
+        error: blocked.reason,
+        message: "Bloqueado pelas regras editoriais",
+        finishedAt: Date.now(),
+      });
+      return;
     }
 
+    updateRewriteJob(jobId, { message: "Checando duplicatas…" });
     const dup = await isDuplicateNews({
       originalLink: scraped.url,
       originalTitle: scraped.title,
     });
     if (dup.duplicate) {
-      return NextResponse.json(
-        {
-          error: `Notícia repetida: ${dup.reason}${
-            dup.matchedTitle ? ` — “${dup.matchedTitle}”` : ""
-          }`,
-        },
-        { status: 409 }
-      );
+      updateRewriteJob(jobId, {
+        status: "error",
+        error: `Notícia repetida: ${dup.reason}${
+          dup.matchedTitle ? ` — “${dup.matchedTitle}”` : ""
+        }`,
+        message: "Duplicada",
+        finishedAt: Date.now(),
+      });
+      return;
     }
 
+    updateRewriteJob(jobId, { message: "Reescrevendo com a IA (Grok)…" });
     const rewritten = await rewriteArticle({
       originalTitle: scraped.title,
       originalSummary: scraped.summary,
@@ -70,9 +139,14 @@ export async function POST(req: NextRequest) {
     const category = normalizeCategory(rewritten.category);
 
     let imageUrl: string | null = null;
+    let usedOriginalImage = false;
+
     if (useSameImage && scraped.imageUrl) {
       imageUrl = scraped.imageUrl;
+      usedOriginalImage = true;
+      updateRewriteJob(jobId, { message: "Usando imagem original…" });
     } else {
+      updateRewriteJob(jobId, { message: "Gerando imagem com a IA…" });
       imageUrl = await generateNewsImage({
         title: rewritten.title,
         lead: rewritten.lead,
@@ -80,9 +154,9 @@ export async function POST(req: NextRequest) {
         originalTitle: scraped.title,
         tags: rewritten.tags,
       });
-      // se IA falhar e existir imagem original, usa como fallback
       if (!imageUrl && scraped.imageUrl) {
         imageUrl = scraped.imageUrl;
+        usedOriginalImage = true;
       }
     }
 
@@ -93,6 +167,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    updateRewriteJob(jobId, { message: "Publicando no site…" });
     const slug = uniqueSlug(rewritten.title, scraped.url);
     const article = await prisma.article.create({
       data: {
@@ -124,23 +199,26 @@ export async function POST(req: NextRequest) {
 
     await pruneOldArticles();
 
-    return NextResponse.json({
-      ok: true,
-      article,
-      usedOriginalImage: Boolean(useSameImage && scraped.imageUrl),
-      scrapedTitle: scraped.title,
+    updateRewriteJob(jobId, {
+      status: "ok",
+      message: `Publicada: “${article.title}”`,
+      usedOriginalImage,
+      article: { id: article.id, slug: article.slug, title: article.title },
+      finishedAt: Date.now(),
     });
   } catch (err) {
-    if (err instanceof RejectedContentError) {
-      return NextResponse.json({ error: err.message }, { status: 400 });
-    }
-    if (err instanceof GrokError) {
-      return NextResponse.json({ error: err.message }, { status: 502 });
-    }
-    console.error("[rewrite-url]", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Falha ao processar o link" },
-      { status: 500 }
-    );
+    const msg =
+      err instanceof RejectedContentError || err instanceof GrokError
+        ? err.message
+        : err instanceof Error
+          ? err.message
+          : "Falha ao processar o link";
+    console.error("[rewrite-url] job error", err);
+    updateRewriteJob(jobId, {
+      status: "error",
+      error: msg,
+      message: "Falhou",
+      finishedAt: Date.now(),
+    });
   }
 }

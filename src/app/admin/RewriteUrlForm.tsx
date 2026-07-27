@@ -1,7 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
+import { readJsonSafe } from "@/lib/safeJson";
+
+type JobPayload = {
+  status: "running" | "ok" | "error";
+  message: string;
+  error?: string;
+  usedOriginalImage?: boolean;
+  article?: { id: string; slug: string; title: string };
+};
 
 export function RewriteUrlForm() {
   const router = useRouter();
@@ -11,37 +20,87 @@ export function RewriteUrlForm() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function stopPoll() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }
+
+  async function pollJob(jobId: string) {
+    stopPoll();
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/admin/rewrite-url?jobId=${encodeURIComponent(jobId)}`);
+        const data = await readJsonSafe<{ ok?: boolean; job?: JobPayload; error?: string }>(res);
+        if (!res.ok || !data.job) {
+          stopPoll();
+          setLoading(false);
+          setError(data.error || "Não foi possível ler o status do job");
+          setMsg("");
+          return;
+        }
+        const job = data.job;
+        setMsg(job.message || "Processando…");
+
+        if (job.status === "running") return;
+
+        stopPoll();
+        setLoading(false);
+
+        if (job.status === "ok") {
+          setError("");
+          setMsg(
+            `Publicada: “${job.article?.title || "sem título"}”` +
+              (job.usedOriginalImage ? " (imagem original)" : " (imagem gerada)")
+          );
+          setUrl("");
+          router.refresh();
+        } else {
+          setError(job.error || "Falha na reescrita");
+          setMsg("");
+        }
+      } catch (err) {
+        // não para no primeiro erro de rede transitório
+        console.warn("[rewrite poll]", err);
+      }
+    }, 2000);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setMsg("Lendo a matéria e reescrevendo… isso pode levar 1–2 minutos.");
+    setMsg("Iniciando…");
+    stopPoll();
+
     try {
       const res = await fetch("/api/admin/rewrite-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, useSameImage, featured }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Falha ao reescrever");
+      const data = await readJsonSafe<{
+        ok?: boolean;
+        jobId?: string;
+        message?: string;
+        error?: string;
+      }>(res);
+
+      if (!res.ok || !data.jobId) {
+        setError(data.error || data.message || "Falha ao iniciar");
         setMsg("");
+        setLoading(false);
         return;
       }
-      setMsg(
-        `Publicada: “${data.article?.title}”` +
-          (data.usedOriginalImage ? " (imagem original)" : " (imagem gerada)")
-      );
-      setUrl("");
-      router.refresh();
-      if (data.article?.slug) {
-        // opcional: abrir em nova aba
-      }
+
+      setMsg(data.message || "Reescrita em andamento…");
+      await pollJob(data.jobId);
     } catch (err) {
-      setError(String(err));
+      setError(err instanceof Error ? err.message : String(err));
       setMsg("");
-    } finally {
       setLoading(false);
     }
   }
@@ -51,13 +110,11 @@ export function RewriteUrlForm() {
       onSubmit={onSubmit}
       className="rounded-2xl border border-white/10 bg-[#0f1520] p-5 shadow-lg shadow-black/20"
     >
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-sm font-bold text-white">Reescrever a partir de um link</h2>
-          <p className="mt-1 text-xs text-zinc-500">
-            Cole a URL de uma matéria. O site extrai o texto, reescreve com a IA e publica.
-          </p>
-        </div>
+      <div className="mb-3">
+        <h2 className="text-sm font-bold text-white">Reescrever a partir de um link</h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          Cole a URL. O processo roda em segundo plano (evita timeout no Render).
+        </p>
       </div>
 
       <label className="mb-3 block text-sm">
@@ -85,7 +142,7 @@ export function RewriteUrlForm() {
           <span>
             <strong className="text-white">Usar mesma imagem</strong>
             <span className="block text-xs text-zinc-500">
-              Marcado = imagem da matéria original. Desmarcado = gera imagem com a IA.
+              Marcado = imagem original. Desmarcado = gera com a IA.
             </span>
           </span>
         </label>
@@ -107,7 +164,7 @@ export function RewriteUrlForm() {
         disabled={loading || !url.trim()}
         className="rounded-full bg-[#009c3b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#00b347] disabled:opacity-50"
       >
-        {loading ? "Reescrevendo…" : "Reescrever e publicar"}
+        {loading ? "Processando…" : "Reescrever e publicar"}
       </button>
 
       {msg ? <p className="mt-3 text-sm text-[#7dffb0]">{msg}</p> : null}

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { readJsonSafe } from "@/lib/safeJson";
 
 const OPTIONS = [1, 2, 3, 5, 8, 10, 15, 20, 30, 50];
 
@@ -24,7 +25,7 @@ export function CollectButton() {
     void (async () => {
       try {
         const res = await fetch("/api/admin/articles?status=1");
-        const data = await res.json();
+        const data = await readJsonSafe<{ collect?: { running?: boolean; cancelRequested?: boolean } }>(res);
         if (data.collect?.running) {
           setLoading(true);
           setMsg(data.collect.cancelRequested ? "Parando…" : "Coletando…");
@@ -43,7 +44,13 @@ export function CollectButton() {
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch("/api/admin/articles?status=1");
-        const data = await res.json();
+        const data = await readJsonSafe<{
+          collect?: {
+            running?: boolean;
+            cancelRequested?: boolean;
+            lastResult?: { message?: string; cancelled?: boolean };
+          };
+        }>(res);
         const c = data.collect;
         if (!c?.running) {
           stopPolling();
@@ -72,7 +79,7 @@ export function CollectButton() {
     setMsg(`Iniciando até ${qty}…`);
     try {
       const res = await fetch(`/api/admin/articles?max=${qty}`, { method: "POST" });
-      const data = await res.json();
+      const data = await readJsonSafe<{ message?: string }>(res);
       if (!res.ok && res.status !== 409) {
         setMsg(data.message || "Falha ao iniciar");
         setLoading(false);
@@ -81,7 +88,7 @@ export function CollectButton() {
       setMsg(data.message || "Coleta iniciada…");
       startPolling();
     } catch (err) {
-      setMsg(String(err));
+      setMsg(err instanceof Error ? err.message : String(err));
       setLoading(false);
     }
   }
@@ -91,7 +98,10 @@ export function CollectButton() {
     setMsg("Parando tudo…");
     try {
       const res = await fetch("/api/admin/collect/stop", { method: "POST" });
-      const data = await res.json();
+      const data = await readJsonSafe<{
+        message?: string;
+        collect?: { running?: boolean };
+      }>(res);
       setMsg(data.message || "Parada enviada");
       if (!data.collect?.running) {
         setLoading(false);
@@ -101,7 +111,7 @@ export function CollectButton() {
         startPolling();
       }
     } catch (err) {
-      setMsg(String(err));
+      setMsg(err instanceof Error ? err.message : String(err));
     } finally {
       setStopping(false);
     }

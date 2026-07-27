@@ -17,6 +17,7 @@ import {
 import { normalizeCategory } from "./categories";
 import { isDuplicateNews } from "./dedupe";
 import { pruneOldArticles } from "./retention";
+import { isTodayBrasilia } from "./format";
 import { uniqueSlug } from "./slug";
 import { SOURCES } from "./sources";
 
@@ -40,6 +41,7 @@ export type CollectStats = {
   skippedOffTopic: number;
   skippedRateLimit: number;
   skippedDuplicate: number;
+  skippedOldDate: number;
   pruned: number;
   saved: number;
   imagesOk: number;
@@ -250,6 +252,7 @@ export async function runCollectionCycle(
       skippedOffTopic: 0,
       skippedRateLimit: 0,
       skippedDuplicate: 0,
+      skippedOldDate: 0,
       pruned: 0,
       saved: 0,
       imagesOk: 0,
@@ -289,6 +292,7 @@ export async function runCollectionCycle(
     skippedOffTopic: 0,
     skippedRateLimit: 0,
     skippedDuplicate: 0,
+    skippedOldDate: 0,
     pruned: 0,
     saved: 0,
     imagesOk: 0,
@@ -333,6 +337,20 @@ export async function runCollectionCycle(
       if (processed >= limit) break;
 
       try {
+        // Só reescreve notícias com data de HOJE (horário de Brasília)
+        if (!isTodayBrasilia(raw.publishedAt || null)) {
+          stats.skippedOldDate += 1;
+          await prisma.seenLink.upsert({
+            where: { link: raw.originalLink },
+            create: { link: raw.originalLink },
+            update: {},
+          });
+          console.log(
+            `[collector] FORA DE HOJE (Brasília): ${raw.originalTitle.slice(0, 60)}`
+          );
+          continue;
+        }
+
         // Anti-repetição: link + título parecido com matérias recentes
         const dup = await isDuplicateNews({
           originalLink: raw.originalLink,
@@ -532,7 +550,8 @@ export async function runCollectionCycle(
 
     const baseMsg =
       `fetched=${stats.fetched} saved=${stats.saved} blocked=${stats.skippedBlocked} ` +
-      `offtopic=${stats.skippedOffTopic} dup=${stats.skippedDuplicate} skip=${stats.skippedSeen} ` +
+      `offtopic=${stats.skippedOffTopic} dup=${stats.skippedDuplicate} ` +
+      `oldDate=${stats.skippedOldDate} skip=${stats.skippedSeen} ` +
       `imgs=${stats.imagesOk} pruned=${stats.pruned} ` +
       (ignoreHour ? `manual limit=${limit}` : `auto limit=${limit}/h`);
 

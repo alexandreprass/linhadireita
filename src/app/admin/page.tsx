@@ -3,8 +3,8 @@ import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AdminActions } from "./AdminActions";
-import { CollectButton, StopCollectButton } from "./CollectButton";
+import { AdminArticlesTable } from "./AdminArticlesTable";
+import { CollectButton } from "./CollectButton";
 import { LogoutButton } from "./LogoutButton";
 
 export const dynamic = "force-dynamic";
@@ -17,12 +17,26 @@ export default async function AdminPage() {
   const [articles, jobs, total] = await Promise.all([
     prisma.article.findMany({
       where: { status: { not: "deleted" } },
-      orderBy: { publishedAt: "desc" },
-      take: 50,
+      // Mais recentes em cima
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      take: 100,
     }),
     prisma.jobLog.findMany({ orderBy: { startedAt: "desc" }, take: 8 }),
     prisma.article.count({ where: { status: "published" } }),
   ]);
+
+  const rows = articles.map((a) => ({
+    id: a.id,
+    slug: a.slug,
+    title: a.title,
+    category: a.category,
+    sourceName: a.sourceName,
+    featured: a.featured,
+    status: a.status,
+    isManual: a.isManual,
+    publishedAt: formatDate(a.publishedAt),
+    createdAt: formatDate(a.createdAt),
+  }));
 
   return (
     <div>
@@ -46,67 +60,37 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
-        <p className="text-xs text-zinc-500">
-          Escolha quantas notícias coletar e clique em “Coletar agora”. Duplicatas das últimas 24h e
-          links já usados são ignorados automaticamente. Use o botão vermelho para parar qualquer
-          coleta ativa no servidor.
-        </p>
-        <StopCollectButton />
-      </div>
+      <p className="mb-6 text-xs text-zinc-500">
+        Só reescreve matérias com data de <strong className="text-zinc-400">hoje (Brasília)</strong>.
+        Duplicatas das últimas 24h são ignoradas. O botão vermelho redondo para todas as coletas.
+        Datas no site usam horário de Brasília.
+      </p>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-white/5 text-xs uppercase tracking-wider text-zinc-500">
-            <tr>
-              <th className="px-4 py-3">Título</th>
-              <th className="hidden px-4 py-3 md:table-cell">Categoria</th>
-              <th className="hidden px-4 py-3 lg:table-cell">Fonte</th>
-              <th className="hidden px-4 py-3 sm:table-cell">Data</th>
-              <th className="px-4 py-3">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {articles.map((a) => (
-              <tr key={a.id} className="border-t border-white/10">
-                <td className="px-4 py-3">
-                  <div className="flex flex-col gap-1">
-                    <Link href={`/noticia/${a.slug}`} className="font-medium text-white hover:text-[#ffdf00]">
-                      {a.featured ? "⭐ " : ""}
-                      {a.title}
-                    </Link>
-                    <span className="text-xs text-zinc-500">
-                      {a.isManual ? "manual" : "auto"} · {a.status}
-                    </span>
-                  </div>
-                </td>
-                <td className="hidden px-4 py-3 text-zinc-400 md:table-cell">{a.category}</td>
-                <td className="hidden px-4 py-3 text-zinc-400 lg:table-cell">{a.sourceName}</td>
-                <td className="hidden px-4 py-3 text-zinc-500 sm:table-cell">{formatDate(a.publishedAt)}</td>
-                <td className="px-4 py-3">
-                  <AdminActions id={a.id} featured={a.featured} />
-                </td>
-              </tr>
-            ))}
-            {articles.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-zinc-500">
-                  Nenhuma notícia ainda. Use “Coletar agora” ou publique manualmente.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+      <AdminArticlesTable articles={rows} />
 
       <section className="mt-10">
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Jobs recentes</h2>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">
+          Jobs recentes
+        </h2>
         <ul className="space-y-2">
           {jobs.map((j) => (
-            <li key={j.id} className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
+            <li
+              key={j.id}
+              className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm"
+            >
               <span className="font-medium text-white">{j.kind}</span>
               <span className="mx-2 text-zinc-600">·</span>
-              <span className={j.status === "ok" ? "text-emerald-400" : j.status === "error" ? "text-red-400" : "text-amber-400"}>
+              <span
+                className={
+                  j.status === "ok"
+                    ? "text-emerald-400"
+                    : j.status === "error"
+                      ? "text-red-400"
+                      : j.status === "cancelled"
+                        ? "text-orange-400"
+                        : "text-amber-400"
+                }
+              >
                 {j.status}
               </span>
               <p className="mt-1 text-xs text-zinc-500">{j.detail || "—"}</p>

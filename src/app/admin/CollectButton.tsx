@@ -8,6 +8,7 @@ const OPTIONS = [1, 2, 3, 5, 8, 10, 15, 20, 30, 50];
 export function CollectButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [msg, setMsg] = useState("");
   const [qty, setQty] = useState(5);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -26,11 +27,7 @@ export function CollectButton() {
         const data = await res.json();
         if (data.collect?.running) {
           setLoading(true);
-          setMsg(
-            data.collect.cancelRequested
-              ? "Parando coleta…"
-              : "Coleta em andamento…"
-          );
+          setMsg(data.collect.cancelRequested ? "Parando…" : "Coletando…");
           startPolling();
         }
       } catch {
@@ -51,6 +48,7 @@ export function CollectButton() {
         if (!c?.running) {
           stopPolling();
           setLoading(false);
+          setStopping(false);
           const last = c?.lastResult;
           setMsg(
             last?.message
@@ -62,11 +60,7 @@ export function CollectButton() {
           router.refresh();
           return;
         }
-        setMsg(
-          c.cancelRequested
-            ? "Parando… aguardando a etapa atual terminar."
-            : "Coleta em andamento…"
-        );
+        setMsg(c.cancelRequested ? "Parando…" : "Coletando…");
       } catch {
         /* ignore */
       }
@@ -75,17 +69,16 @@ export function CollectButton() {
 
   async function collect() {
     setLoading(true);
-    setMsg(`Iniciando coleta de até ${qty} notícia(s)…`);
+    setMsg(`Iniciando até ${qty}…`);
     try {
       const res = await fetch(`/api/admin/articles?max=${qty}`, { method: "POST" });
       const data = await res.json();
       if (!res.ok && res.status !== 409) {
-        setMsg(data.message || "Falha ao iniciar coleta");
+        setMsg(data.message || "Falha ao iniciar");
         setLoading(false);
         return;
       }
       setMsg(data.message || "Coleta iniciada…");
-      setLoading(true);
       startPolling();
     } catch (err) {
       setMsg(String(err));
@@ -93,11 +86,32 @@ export function CollectButton() {
     }
   }
 
+  async function stopAll() {
+    setStopping(true);
+    setMsg("Parando tudo…");
+    try {
+      const res = await fetch("/api/admin/collect/stop", { method: "POST" });
+      const data = await res.json();
+      setMsg(data.message || "Parada enviada");
+      if (!data.collect?.running) {
+        setLoading(false);
+        stopPolling();
+        router.refresh();
+      } else {
+        startPolling();
+      }
+    } catch (err) {
+      setMsg(String(err));
+    } finally {
+      setStopping(false);
+    }
+  }
+
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <label className="flex items-center gap-2 text-xs text-zinc-400">
-          Quantidade
+          Qtd
           <select
             value={qty}
             onChange={(e) => setQty(Number(e.target.value))}
@@ -106,7 +120,7 @@ export function CollectButton() {
           >
             {OPTIONS.map((n) => (
               <option key={n} value={n}>
-                {n} {n === 1 ? "notícia" : "notícias"}
+                {n}
               </option>
             ))}
           </select>
@@ -119,72 +133,28 @@ export function CollectButton() {
         >
           {loading ? "Coletando..." : "Coletar agora"}
         </button>
+        {/* Mini botão redondo desligar — sempre ao lado de Coletar */}
+        <button
+          type="button"
+          onClick={stopAll}
+          disabled={stopping}
+          title="Parar todas as coletas ativas"
+          aria-label="Parar coleta"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-red-500/50 bg-red-600 text-white shadow-md shadow-red-900/40 transition hover:bg-red-500 disabled:opacity-50"
+        >
+          <PowerIcon />
+        </button>
       </div>
       {msg ? <span className="max-w-sm text-right text-[11px] text-zinc-500">{msg}</span> : null}
     </div>
   );
 }
 
-/** Botão sempre visível — para todos os processos de coleta ativos. */
-export function StopCollectButton() {
-  const router = useRouter();
-  const [stopping, setStopping] = useState(false);
-  const [active, setActive] = useState(false);
-  const [msg, setMsg] = useState("");
-
-  useEffect(() => {
-    let alive = true;
-    const tick = async () => {
-      try {
-        const res = await fetch("/api/admin/articles?status=1");
-        const data = await res.json();
-        if (!alive) return;
-        setActive(Boolean(data.collect?.running || data.collect?.cancelRequested));
-      } catch {
-        /* ignore */
-      }
-    };
-    void tick();
-    const id = setInterval(tick, 2500);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, []);
-
-  async function stopAll() {
-    setStopping(true);
-    setMsg("Parando todos os processos de coleta…");
-    try {
-      const res = await fetch("/api/admin/collect/stop", { method: "POST" });
-      const data = await res.json();
-      setMsg(data.message || "Parada enviada");
-      setActive(Boolean(data.collect?.running));
-      router.refresh();
-    } catch (err) {
-      setMsg(String(err));
-    } finally {
-      setStopping(false);
-    }
-  }
-
+function PowerIcon() {
   return (
-    <div className="flex flex-col items-stretch gap-2 rounded-2xl border border-red-500/30 bg-red-950/30 p-4 sm:min-w-[220px]">
-      <p className="text-xs font-bold uppercase tracking-wider text-red-300">Emergência</p>
-      <button
-        type="button"
-        onClick={stopAll}
-        disabled={stopping}
-        className="rounded-full border border-red-500/50 bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500 disabled:opacity-60"
-      >
-        {stopping ? "Parando tudo…" : "Parar coleta"}
-      </button>
-      <p className="text-[11px] leading-relaxed text-red-200/70">
-        {active
-          ? "Coleta ativa detectada — clique para interromper todos os processos."
-          : "Sempre disponível. Encerra qualquer coleta em andamento no servidor."}
-      </p>
-      {msg ? <p className="text-[11px] text-red-200/90">{msg}</p> : null}
-    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+      <path d="M12 2v10" strokeLinecap="round" />
+      <path d="M6.3 6.3a8 8 0 1 0 11.4 0" strokeLinecap="round" />
+    </svg>
   );
 }

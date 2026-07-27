@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #070b14;
+  --background: #06090f;
   --foreground: #f3f4f7;
   --brasil-green: #009c3b;
   --brasil-yellow: #ffdf00;
   --brasil-blue: #002776;
+  --panel: rgba(15, 20, 32, 0.72);
+  --panel-border: rgba(255, 255, 255, 0.08);
 }
 
 @theme inline {
@@ -22,17 +24,28 @@ html {
 
 body {
   background:
-    radial-gradient(900px 500px at 8% -12%, rgba(0, 156, 59, 0.16), transparent 55%),
-    radial-gradient(700px 420px at 92% 0%, rgba(0, 39, 118, 0.22), transparent 52%),
-    radial-gradient(500px 300px at 50% 100%, rgba(255, 223, 0, 0.05), transparent 50%),
-    var(--background);
+    radial-gradient(1000px 560px at 8% -14%, rgba(0, 156, 59, 0.18), transparent 55%),
+    radial-gradient(800px 480px at 95% 0%, rgba(0, 39, 118, 0.28), transparent 50%),
+    radial-gradient(600px 360px at 50% 110%, rgba(255, 223, 0, 0.06), transparent 45%),
+    linear-gradient(180deg, #080c14 0%, #06090f 40%, #05080e 100%);
   color: var(--foreground);
   min-height: 100vh;
 }
 
+/* Mesh glow under content */
+.page-glow {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 156, 59, 0.06), transparent 35%),
+    radial-gradient(circle at 80% 30%, rgba(0, 39, 118, 0.08), transparent 40%);
+}
+
 .prose-news p {
   margin-bottom: 1.15rem;
-  line-height: 1.75;
+  line-height: 1.8;
   color: #e4e7ee;
   font-size: 1.08rem;
 }
@@ -43,4 +56,75 @@ body {
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Feed lateral */
+.feed-panel {
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid var(--panel-border);
+  background: linear-gradient(165deg, rgba(18, 24, 38, 0.95), rgba(10, 14, 22, 0.92));
+  box-shadow:
+    0 0 0 1px rgba(0, 156, 59, 0.06),
+    0 20px 50px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+}
+
+.feed-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #009c3b;
+  box-shadow: 0 0 0 3px rgba(0, 156, 59, 0.2);
+}
+
+.live-pulse {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ff3b3b;
+  box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.55);
+  animation: live-pulse 1.6s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 59, 59, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 59, 59, 0);
+  }
+}
+
+/* Cards glass */
+.glass-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(165deg, rgba(18, 24, 38, 0.9), rgba(12, 16, 26, 0.85));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.glass-card:hover {
+  border-color: rgba(0, 156, 59, 0.35);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(0, 156, 59, 0.08);
+}
+
+/* Brasil stripe accent */
+.brasil-stripe {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #009c3b 0%, #ffdf00 50%, #002776 100%);
+}
+
+.site-shell {
+  width: min(1280px, calc(100% - 2rem));
+  margin-inline: auto;
 }

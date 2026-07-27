@@ -1,8 +1,9 @@
 import { ArticleCard } from "@/components/ArticleCard";
+import { RecentFeed } from "@/components/RecentFeed";
 import { ShareButtons } from "@/components/ShareButtons";
 import { categoryLabel } from "@/lib/categories";
 import { formatDate } from "@/lib/format";
-import { getBySlug, parseTags, relatedArticles } from "@/lib/articles";
+import { getBySlug, listPublished, parseTags, relatedArticles } from "@/lib/articles";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -40,14 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "LINHA DIREITA",
       locale: "pt_BR",
       publishedTime: article.publishedAt?.toISOString?.() || undefined,
-      images: [
-        {
-          url: image,
-          width: 1200,
-          height: 630,
-          alt: article.title,
-        },
-      ],
+      images: [{ url: image, width: 1200, height: 630, alt: article.title }],
     },
     twitter: {
       card: "summary_large_image",
@@ -64,6 +58,7 @@ export default async function ArticlePage({ params }: Props) {
   if (!article) notFound();
 
   const related = await relatedArticles(article);
+  const { items: recent } = await listPublished({ take: 10, excludeId: article.id });
   const tags = parseTags(article.tags);
   const paragraphs = article.body
     .split(/\n\s*\n/)
@@ -73,74 +68,80 @@ export default async function ArticlePage({ params }: Props) {
   const shareUrl = `${siteOrigin()}/noticia/${article.slug}`;
 
   return (
-    <article className="mx-auto max-w-4xl">
-      <header className="mb-6">
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
-          <Link
-            href={`/categoria/${article.category}`}
-            className="rounded-full border border-[#ffdf00]/30 bg-[#ffdf00]/10 px-2.5 py-0.5 text-xs font-semibold text-[#ffdf00]"
-          >
-            {categoryLabel(article.category)}
-          </Link>
-          <span>Linha Direita</span>
-          <span>·</span>
-          <time>{formatDate(article.publishedAt)}</time>
-        </div>
-        <h1 className="font-serif text-3xl leading-tight tracking-tight text-white md:text-5xl">
-          {article.title}
-        </h1>
-        {article.lead ? (
-          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">{article.lead}</p>
-        ) : null}
-      </header>
-
-      {article.imageUrl ? (
-        <figure className="mb-8 overflow-hidden rounded-2xl border border-white/10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            className="max-h-[460px] w-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        </figure>
-      ) : null}
-
-      <div className="prose-news max-w-2xl">
-        {paragraphs.map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
-      </div>
-
-      <ShareButtons url={shareUrl} title={article.title} lead={article.lead} />
-
-      {tags.length > 0 ? (
-        <ul className="mt-8 flex flex-wrap gap-2">
-          {tags.map((t) => (
-            <li key={t}>
-              <Link
-                href={`/busca?q=${encodeURIComponent(t)}`}
-                className="rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-400 hover:border-[#009c3b]/40 hover:text-white"
-              >
-                {t}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {related.length > 0 ? (
-        <section className="mt-12">
-          <h2 className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">
-            Relacionadas
-          </h2>
-          <div className="grid gap-5 sm:grid-cols-2">
-            {related.map((a) => (
-              <ArticleCard key={a.id} article={a} />
-            ))}
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
+      <article>
+        <header className="mb-6">
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
+            <Link
+              href={`/categoria/${article.category}`}
+              className="rounded-full border border-[#ffdf00]/30 bg-[#ffdf00]/10 px-2.5 py-0.5 text-xs font-semibold text-[#ffdf00]"
+            >
+              {categoryLabel(article.category)}
+            </Link>
+            <span>Linha Direita</span>
+            <span>·</span>
+            <time>{formatDate(article.publishedAt)}</time>
           </div>
-        </section>
-      ) : null}
-    </article>
+          <h1 className="font-serif text-3xl leading-tight tracking-tight text-white md:text-5xl">
+            {article.title}
+          </h1>
+          {article.lead ? (
+            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-400">{article.lead}</p>
+          ) : null}
+        </header>
+
+        {article.imageUrl ? (
+          <figure className="glass-card mb-8 overflow-hidden rounded-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={article.imageUrl}
+              alt={article.title}
+              className="max-h-[480px] w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </figure>
+        ) : null}
+
+        <div className="prose-news max-w-2xl">
+          {paragraphs.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+        </div>
+
+        <ShareButtons url={shareUrl} title={article.title} lead={article.lead} />
+
+        {tags.length > 0 ? (
+          <ul className="mt-8 flex flex-wrap gap-2">
+            {tags.map((t) => (
+              <li key={t}>
+                <Link
+                  href={`/busca?q=${encodeURIComponent(t)}`}
+                  className="rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-400 transition hover:border-[#009c3b]/40 hover:text-white"
+                >
+                  {t}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {related.length > 0 ? (
+          <section className="mt-12">
+            <h2 className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">
+              Relacionadas
+            </h2>
+            <div className="grid gap-5 sm:grid-cols-2">
+              {related.map((a) => (
+                <ArticleCard key={a.id} article={a} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </article>
+
+      <div>
+        <RecentFeed articles={recent} title="Mais recentes" subtitle="Feed lateral" />
+      </div>
+    </div>
   );
 }

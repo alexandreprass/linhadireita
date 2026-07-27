@@ -5,7 +5,8 @@ import { CATEGORIES } from "@/lib/categories";
 export function Footer() {
   return (
     <footer className="mt-auto border-t border-white/10 bg-black/40">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-2">
+      <div className="brasil-stripe opacity-80" />
+      <div className="site-shell grid gap-10 py-12 md:grid-cols-2">
         <div>
           <Link href="/" className="mb-4 inline-block">
             <Image
@@ -13,11 +14,12 @@ export function Footer() {
               alt="Linha Direita"
               width={360}
               height={128}
-              className="h-28 w-auto object-contain"
+              className="h-24 w-auto object-contain opacity-95"
             />
           </Link>
           <p className="max-w-sm text-sm leading-relaxed text-zinc-400">
-            Política, segurança, eleições, Congresso, STF e EUA.
+            Política, segurança, eleições, Congresso, STF e EUA — com clareza e cobertura em tempo
+            real.
           </p>
         </div>
         <div>
@@ -25,9 +27,9 @@ export function Footer() {
             Assuntos
           </h4>
           <ul className="grid grid-cols-2 gap-2 text-sm text-zinc-300">
-            {CATEGORIES.slice(0, 8).map((c) => (
+            {CATEGORIES.map((c) => (
               <li key={c.slug}>
-                <Link href={`/categoria/${c.slug}`} className="hover:text-[#ffdf00]">
+                <Link href={`/categoria/${c.slug}`} className="transition hover:text-[#ffdf00]">
                   {c.label}
                 </Link>
               </li>
@@ -36,9 +38,9 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-4 text-xs text-zinc-500">
+        <div className="site-shell flex flex-wrap justify-between gap-2 py-4 text-xs text-zinc-500">
           <span>© {new Date().getFullYear()} Linha Direita</span>
-          <span className="text-zinc-600">Notícias com clareza</span>
+          <span className="text-zinc-600">Horário de Brasília · Notícias com clareza</span>
         </div>
       </div>
     </footer>

@@ -56,8 +56,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       className={`${geistSans.variable} ${geistMono.variable} ${sourceSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
+        <div className="page-glow" aria-hidden />
         <Header />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+        <main className="site-shell flex-1 py-8 md:py-10">{children}</main>
         <Footer />
       </body>
     </html>

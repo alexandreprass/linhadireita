@@ -17,7 +17,7 @@ type Props = {
 
 export function ArticleCard({ article }: Props) {
   return (
-    <article className="group overflow-hidden rounded-2xl border border-white/10 bg-[#0f1520] transition duration-300 hover:-translate-y-0.5 hover:border-[#009c3b]/35 hover:bg-[#121a28]">
+    <article className="glass-card group overflow-hidden rounded-2xl transition duration-300 hover:-translate-y-1">
       <Link href={`/noticia/${article.slug}`} className="flex h-full flex-col">
         <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
           {article.imageUrl ? (
@@ -25,13 +25,14 @@ export function ArticleCard({ article }: Props) {
             <img
               src={article.imageUrl}
               alt=""
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-[#002776]/80 via-zinc-900 to-black" />
+            <div className="h-full w-full bg-gradient-to-br from-[#002776]/90 via-zinc-900 to-black" />
           )}
-          <span className="absolute bottom-3 left-3 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80" />
+          <span className="absolute bottom-3 left-3 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
             {categoryLabel(article.category)}
           </span>
         </div>
@@ -41,7 +42,7 @@ export function ArticleCard({ article }: Props) {
             <span>·</span>
             <time>{formatRelative(article.publishedAt)}</time>
           </div>
-          <h3 className="line-clamp-3 text-[1.05rem] font-semibold leading-snug tracking-tight text-white">
+          <h3 className="line-clamp-3 text-[1.05rem] font-semibold leading-snug tracking-tight text-white transition group-hover:text-[#ffdf00]">
             {article.title}
           </h3>
           {article.lead ? (

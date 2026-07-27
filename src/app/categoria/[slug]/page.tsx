@@ -1,5 +1,7 @@
 import { ArticleCard } from "@/components/ArticleCard";
+import { CategoryChips } from "@/components/CategoryChips";
 import { EmptyState } from "@/components/EmptyState";
+import { RecentFeed } from "@/components/RecentFeed";
 import { categoryLabel, isValidCategory } from "@/lib/categories";
 import { listPublished } from "@/lib/articles";
 import type { Metadata } from "next";
@@ -28,11 +30,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page || 1));
   const take = 12;
-  const { items, total } = await listPublished({
-    category: slug,
-    take,
-    skip: (page - 1) * take,
-  });
+  const [{ items, total }, recent] = await Promise.all([
+    listPublished({
+      category: slug,
+      take,
+      skip: (page - 1) * take,
+    }),
+    listPublished({ take: 10 }),
+  ]);
   const totalPages = Math.max(1, Math.ceil(total / take));
 
   return (
@@ -42,42 +47,48 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       <p className="mt-2 text-sm text-zinc-400">
         {total} matéria{total === 1 ? "" : "s"}
       </p>
+      <div className="mt-4">
+        <CategoryChips active={slug} />
+      </div>
 
-      {items.length === 0 ? (
-        <div className="mt-8">
-          <EmptyState title={`Sem notícias em ${categoryLabel(slug)}`} />
-        </div>
-      ) : (
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((a) => (
-            <ArticleCard key={a.id} article={a} />
-          ))}
-        </div>
-      )}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div>
+          {items.length === 0 ? (
+            <EmptyState title={`Sem notícias em ${categoryLabel(slug)}`} />
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2">
+              {items.map((a) => (
+                <ArticleCard key={a.id} article={a} />
+              ))}
+            </div>
+          )}
 
-      {totalPages > 1 ? (
-        <div className="mt-10 flex items-center justify-center gap-4 text-sm text-zinc-400">
-          {page > 1 ? (
-            <a
-              href={`?page=${page - 1}`}
-              className="rounded-full border border-white/10 px-4 py-2 text-white hover:border-[#009c3b]/40"
-            >
-              ← Anterior
-            </a>
-          ) : null}
-          <span>
-            Página {page} de {totalPages}
-          </span>
-          {page < totalPages ? (
-            <a
-              href={`?page=${page + 1}`}
-              className="rounded-full border border-white/10 px-4 py-2 text-white hover:border-[#009c3b]/40"
-            >
-              Próxima →
-            </a>
+          {totalPages > 1 ? (
+            <div className="mt-10 flex items-center justify-center gap-4 text-sm text-zinc-400">
+              {page > 1 ? (
+                <a
+                  href={`?page=${page - 1}`}
+                  className="rounded-full border border-white/10 px-4 py-2 text-white hover:border-[#009c3b]/40"
+                >
+                  ← Anterior
+                </a>
+              ) : null}
+              <span>
+                Página {page} de {totalPages}
+              </span>
+              {page < totalPages ? (
+                <a
+                  href={`?page=${page + 1}`}
+                  className="rounded-full border border-white/10 px-4 py-2 text-white hover:border-[#009c3b]/40"
+                >
+                  Próxima →
+                </a>
+              ) : null}
+            </div>
           ) : null}
         </div>
-      ) : null}
+        <RecentFeed articles={recent.items} title="Feed ao vivo" subtitle="Todas as categorias" />
+      </div>
     </div>
   );
 }

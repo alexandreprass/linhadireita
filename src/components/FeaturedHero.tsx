@@ -12,16 +12,28 @@ type Props = {
     imageUrl?: string | null;
     publishedAt: Date | string;
   };
+  /** Ao lado do feed: layout em coluna (imagem em cima). */
+  besideFeed?: boolean;
 };
 
-export function FeaturedHero({ article }: Props) {
+export function FeaturedHero({ article, besideFeed = false }: Props) {
   return (
-    <section className="mb-8">
+    <section className={besideFeed ? "h-full" : "mb-8"}>
       <Link
         href={`/noticia/${article.slug}`}
-        className="group glass-card relative grid overflow-hidden rounded-[1.75rem] transition duration-300 hover:-translate-y-0.5 md:grid-cols-2"
+        className={
+          besideFeed
+            ? "group glass-card flex h-full min-h-[420px] flex-col overflow-hidden rounded-[1.5rem] transition duration-300 hover:-translate-y-0.5"
+            : "group glass-card relative grid overflow-hidden rounded-[1.75rem] transition duration-300 hover:-translate-y-0.5 md:grid-cols-2"
+        }
       >
-        <div className="relative min-h-[280px] overflow-hidden bg-zinc-900 md:min-h-[400px]">
+        <div
+          className={
+            besideFeed
+              ? "relative min-h-[220px] flex-[1.1] overflow-hidden bg-zinc-900 sm:min-h-[260px]"
+              : "relative min-h-[280px] overflow-hidden bg-zinc-900 md:min-h-[400px]"
+          }
+        >
           {article.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -33,13 +45,19 @@ export function FeaturedHero({ article }: Props) {
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-[#002776] via-[#0b1a12] to-black" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
           <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-[#009c3b] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg shadow-green-900/40">
             <span className="live-pulse !bg-white !shadow-none" />
             Destaque
           </span>
         </div>
-        <div className="relative flex flex-col justify-center gap-4 p-6 md:p-10">
+        <div
+          className={
+            besideFeed
+              ? "relative flex flex-col justify-center gap-3 p-5 md:p-6"
+              : "relative flex flex-col justify-center gap-4 p-6 md:p-10"
+          }
+        >
           <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-400">
             <span className="rounded-full border border-[#ffdf00]/30 bg-[#ffdf00]/10 px-2.5 py-0.5 text-xs font-semibold text-[#ffdf00]">
               {categoryLabel(article.category)}
@@ -48,11 +66,23 @@ export function FeaturedHero({ article }: Props) {
             <span className="text-zinc-600">·</span>
             <time className="text-zinc-500">{formatDate(article.publishedAt)}</time>
           </div>
-          <h1 className="font-serif text-3xl leading-[1.12] tracking-tight text-white md:text-4xl lg:text-[2.55rem]">
+          <h1
+            className={
+              besideFeed
+                ? "font-serif text-2xl leading-[1.15] tracking-tight text-white md:text-3xl"
+                : "font-serif text-3xl leading-[1.12] tracking-tight text-white md:text-4xl lg:text-[2.55rem]"
+            }
+          >
             {article.title}
           </h1>
           {article.lead ? (
-            <p className="max-w-xl text-base leading-relaxed text-zinc-400 md:text-lg">
+            <p
+              className={
+                besideFeed
+                  ? "line-clamp-3 text-sm leading-relaxed text-zinc-400 md:text-base"
+                  : "max-w-xl text-base leading-relaxed text-zinc-400 md:text-lg"
+              }
+            >
               {article.lead}
             </p>
           ) : null}

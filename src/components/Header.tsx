@@ -11,9 +11,9 @@ export function Header() {
           <Image
             src="/logo.png"
             alt="Linha Direita"
-            width={160}
-            height={56}
-            className="h-12 w-auto object-contain md:h-14"
+            width={320}
+            height={112}
+            className="h-24 w-auto object-contain md:h-28"
             priority
           />
         </Link>

@@ -25,6 +25,8 @@ services:
         value: grok-imagine-image
       - key: MAX_REWRITE_PER_CYCLE
         value: "2"
+      - key: MAX_ARTICLES
+        value: "200"
       - key: ADMIN_USER
         value: admin
       - key: ADMIN_PASSWORD

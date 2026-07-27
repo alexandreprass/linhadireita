@@ -1,53 +1,61 @@
 # Deploy no Render — LINHA DIREITA
 
+## Por que as notícias sumiam?
+
+O SQLite fica no **disco temporário** do Render. Em todo redeploy o arquivo some.  
+**Solução: usar PostgreSQL do Render** (persistente).
+
 ## Language
-**Node** (não Python)
+**Node**
 
 ## Comandos
 
 | Campo | Valor |
 |--------|--------|
 | **Build Command** | `npm install && npm run build` |
-| **Start Command** | `npx prisma db push && npx next start -p $PORT` |
+| **Start Command** | `npm start` |
 
-## Variáveis de ambiente (Environment)
+## 1) Criar banco PostgreSQL
 
-Crie estas no painel do serviço:
+1. No Render: **New → PostgreSQL**  
+2. Nome: `linhadireita-db`  
+3. Depois de criado, copie **Internal Database URL**
+
+## 2) Variáveis do Web Service
 
 ```
 NODE_VERSION=20
+DATABASE_URL=<Internal Database URL do Postgres>
 XAI_API_KEY=sua_chave_xai
 GROK_MODEL=grok-4.5
 GROK_IMAGE_MODEL=grok-imagine-image
 ADMIN_USER=admin
 ADMIN_PASSWORD=84074070
-ADMIN_SESSION_SECRET=qualquer-texto-longo-aleatorio
-CRON_SECRET=outro-segredo-aleatorio
-NEXT_PUBLIC_SITE_URL=https://SEU-SERVICO.onrender.com
+ADMIN_SESSION_SECRET=texto-longo-aleatorio
+CRON_SECRET=outro-segredo
+NEXT_PUBLIC_SITE_URL=https://SEU-APP.onrender.com
 MAX_REWRITE_PER_CYCLE=2
+MAX_ARTICLES=200
 ```
 
-Cron: a cada **1 hora** (não a cada 30 min), para bater com o limite de 2 notícias/hora.
+Se o Web Service e o Postgres estiverem no **mesmo blueprint**, use:
 
+- `DATABASE_URL` → **From Database** → connection string
 
-> **Não precisa de DATABASE_URL** — o projeto usa SQLite embutido (`prisma/linhadireita.db`).  
-> Os dados podem zerar se o Render recriar o container. Depois você pode migrar para Postgres.
+## 3) Coleta
 
-## Se quiser PostgreSQL (melhor)
+| Origem | Limite |
+|--------|--------|
+| **Cron automático** | 2 notícias por hora |
+| **Admin → Coletar agora** | Sem limite horário (até 50 por clique) |
 
-1. No Render: New → PostgreSQL  
-2. Copie a **Internal Database URL**  
-3. Em Environment:
-   ```
-   DATABASE_URL=postgresql://...
-   ```
-4. No arquivo `prisma/schema.prisma` troque:
-   ```prisma
-   provider = "postgresql"
-   ```
-5. Commit + redeploy
+Cron (1x por hora):
+
+```
+POST https://SEU-APP.onrender.com/api/cron/collect?secret=SEU_CRON_SECRET
+```
+
+Schedule: `0 * * * *`
 
 ## Admin
-- URL: `https://seu-app.onrender.com/admin`
-- User: `admin`
-- Senha: `84074070` (ou o valor de `ADMIN_PASSWORD`)
+`/admin` — user `admin` / senha configurada

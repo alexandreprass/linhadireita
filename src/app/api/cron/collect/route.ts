@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { isCollectRunning, runCollectionCycle } from "@/lib/collector";
 
 /**
- * Worker HTTP para coleta periódica (Render Cron / externo).
- * Protegido por CRON_SECRET no header Authorization: Bearer <secret>
- * ou query ?secret=
+ * Worker HTTP para coleta automática (Render Cron).
+ * Respeita o limite de 2 notícias por hora.
+ * Protegido por CRON_SECRET.
  */
 export async function POST(req: NextRequest) {
   const secret = process.env.CRON_SECRET || "";
@@ -21,7 +21,10 @@ export async function POST(req: NextRequest) {
   }
 
   const max = Number(req.nextUrl.searchParams.get("max") || process.env.MAX_REWRITE_PER_CYCLE || 2);
-  const result = await runCollectionCycle(max);
+  const result = await runCollectionCycle({
+    maxRewrite: max,
+    ignoreHourLimit: false,
+  });
   return NextResponse.json(result);
 }
 

@@ -168,10 +168,27 @@ async function collectRawFromRss(maxPerFeed = 12): Promise<RawArticle[]> {
   return out;
 }
 
+export type CollectOptions = {
+  /** Quantas reescrever neste ciclo. Manual pode passar alto (ex.: 50). */
+  maxRewrite?: number;
+  /**
+   * true = ignora o teto de 2/hora (uso do botão "Coletar agora" no admin).
+   * false/omitido = respeita MAX_REWRITE_PER_CYCLE por hora (cron automático).
+   */
+  ignoreHourLimit?: boolean;
+};
+
 /**
  * Executa um ciclo completo de coleta e publicação automática.
  */
-export async function runCollectionCycle(maxRewrite?: number): Promise<CollectStats> {
+export async function runCollectionCycle(
+  maxRewriteOrOpts?: number | CollectOptions
+): Promise<CollectStats> {
+  const opts: CollectOptions =
+    typeof maxRewriteOrOpts === "number"
+      ? { maxRewrite: maxRewriteOrOpts, ignoreHourLimit: false }
+      : maxRewriteOrOpts || {};
+
   if (running) {
     return {
       ok: false,
@@ -192,10 +209,20 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
 
   running = true;
   const hourCap = MAX_NEWS_PER_HOUR;
-  const alreadyThisHour = await autoPublishedInLastHour();
-  const remainingHour = Math.max(0, hourCap - alreadyThisHour);
-  const requested = maxRewrite ?? hourCap;
-  const limit = Math.min(requested, remainingHour, hourCap);
+  const ignoreHour = opts.ignoreHourLimit === true;
+  // Coleta manual: sem teto horário (até 50 por clique, ou o max pedido)
+  const manualCap = 50;
+  let limit: number;
+  let alreadyThisHour = 0;
+
+  if (ignoreHour) {
+    limit = Math.min(opts.maxRewrite ?? manualCap, manualCap);
+  } else {
+    alreadyThisHour = await autoPublishedInLastHour();
+    const remainingHour = Math.max(0, hourCap - alreadyThisHour);
+    const requested = opts.maxRewrite ?? hourCap;
+    limit = Math.min(requested, remainingHour, hourCap);
+  }
 
   const job = await prisma.jobLog.create({
     data: { kind: "collect", status: "running" },
@@ -220,7 +247,9 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
   try {
     if (limit <= 0) {
       stats.skippedRateLimit = 1;
-      stats.message = `limite de ${hourCap} notícias/hora atingido (já publicadas nesta hora: ${alreadyThisHour})`;
+      stats.message = ignoreHour
+        ? "limite do ciclo inválido"
+        : `limite de ${hourCap} notícias/hora atingido (já publicadas nesta hora: ${alreadyThisHour})`;
       await prisma.jobLog.update({
         where: { id: job.id },
         data: { status: "ok", detail: stats.message, finishedAt: new Date() },
@@ -420,7 +449,8 @@ export async function runCollectionCycle(maxRewrite?: number): Promise<CollectSt
     stats.message =
       `fetched=${stats.fetched} saved=${stats.saved} blocked=${stats.skippedBlocked} ` +
       `offtopic=${stats.skippedOffTopic} dup=${stats.skippedDuplicate} skip=${stats.skippedSeen} ` +
-      `imgs=${stats.imagesOk} pruned=${stats.pruned} limit=${limit}/h`;
+      `imgs=${stats.imagesOk} pruned=${stats.pruned} ` +
+      (ignoreHour ? `manual limit=${limit}` : `auto limit=${limit}/h`);
     await prisma.jobLog.update({
       where: { id: job.id },
       data: { status: "ok", detail: stats.message, finishedAt: new Date() },

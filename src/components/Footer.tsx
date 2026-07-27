@@ -11,9 +11,9 @@ export function Footer() {
             <Image
               src="/logo.png"
               alt="Linha Direita"
-              width={180}
-              height={64}
-              className="h-14 w-auto object-contain"
+              width={360}
+              height={128}
+              className="h-28 w-auto object-contain"
             />
           </Link>
           <p className="max-w-sm text-sm leading-relaxed text-zinc-400">

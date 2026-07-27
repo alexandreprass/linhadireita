@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "prisma db push && next start",
+    "build": "node scripts/resolve-db.js && prisma generate && prisma db push && next build",
+    "start": "node scripts/resolve-db.js && prisma db push && next start",
     "lint": "eslint",
-    "postinstall": "prisma generate",
-    "db:push": "prisma db push",
+    "postinstall": "node scripts/resolve-db.js && prisma generate",
+    "db:push": "node scripts/resolve-db.js && prisma db push",
     "collect": "tsx scripts/collect-once.ts"
   },
   "engines": {

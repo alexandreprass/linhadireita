@@ -1,13 +1,17 @@
-// Prisma 5 — SQLite (funciona local e no Render sem configurar DATABASE_URL).
-// Para PostgreSQL no futuro, troque provider e url para env("DATABASE_URL").
+// Banco de dados
+// - Local (padrão): SQLite em arquivo (veja DATABASE_URL no .env)
+// - Render: use PostgreSQL e DATABASE_URL do painel (dados NÃO somem no redeploy)
+//
+// Se DATABASE_URL for postgres (começa com postgresql:// ou postgres://),
+// o build no Render deve usar provider postgresql — veja scripts/resolve-db.js
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
+  // "sqlite" local | no Render com Postgres o script de build troca para postgresql
   provider = "sqlite"
-  // Caminho fixo: não depende de variável de ambiente no deploy
-  url      = "file:./linhadireita.db"
+  url      = env("DATABASE_URL")
 }
 
 model Article {

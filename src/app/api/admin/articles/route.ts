@@ -19,12 +19,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Dispara coleta manual
+  // Coleta MANUAL: sem limite de 2/hora — processa até `max` (padrão 50)
   const { runCollectionCycle, isCollectRunning } = await import("@/lib/collector");
   if (isCollectRunning()) {
     return NextResponse.json({ ok: false, message: "Coleta já em andamento" }, { status: 409 });
   }
-  const max = Number(req.nextUrl.searchParams.get("max") || process.env.MAX_REWRITE_PER_CYCLE || 2);
-  const result = await runCollectionCycle(max);
+  const max = Number(req.nextUrl.searchParams.get("max") || 50);
+  const result = await runCollectionCycle({
+    maxRewrite: max,
+    ignoreHourLimit: true,
+  });
   return NextResponse.json(result);
 }

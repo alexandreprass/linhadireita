@@ -10,9 +10,10 @@ export function CollectButton() {
 
   async function collect() {
     setLoading(true);
-    setMsg("Coletando… pode levar alguns minutos.");
+    setMsg("Coletando… pode levar vários minutos (sem limite de 2/hora).");
     try {
-      const res = await fetch("/api/admin/articles?max=2", { method: "POST" });
+      // max=50 e ignoreHourLimit no servidor — coleta manual livre
+      const res = await fetch("/api/admin/articles?max=50", { method: "POST" });
       const data = await res.json();
       setMsg(data.message || JSON.stringify(data));
       router.refresh();

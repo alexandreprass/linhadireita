@@ -7,18 +7,21 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#06090f]/92 backdrop-blur-2xl">
       <div className="brasil-stripe" />
-      {/* Altura do header = logo + padding mínimo (logo já recortado sem margem vazia) */}
-      <div className="site-shell flex h-14 items-center gap-3 md:h-16 md:gap-4">
+      {/*
+        Logo grande + header justo:
+        altura fixa generosa para o logo; padding zero — o header não fica “vazio”.
+      */}
+      <div className="site-shell flex h-[72px] items-center gap-3 md:h-[88px] md:gap-4 lg:h-[96px]">
         <Link
           href="/"
-          className="flex h-full shrink-0 items-center py-1 leading-none transition hover:opacity-95"
+          className="flex h-[85%] shrink-0 items-center leading-none transition hover:opacity-95"
         >
           <Image
             src="/logo.png"
             alt="Linha Direita"
             width={588}
             height={424}
-            className="h-full w-auto object-contain object-left drop-shadow-[0_0_18px_rgba(255,223,0,0.15)]"
+            className="h-full w-auto max-w-[200px] object-contain object-left drop-shadow-[0_0_20px_rgba(255,223,0,0.16)] sm:max-w-[240px] md:max-w-[280px] lg:max-w-[320px]"
             priority
           />
         </Link>

@@ -12,9 +12,9 @@ export function Footer() {
             <Image
               src="/logo.png"
               alt="Linha Direita"
-              width={720}
-              height={256}
-              className="h-40 w-auto object-contain opacity-95 md:h-48"
+              width={588}
+              height={424}
+              className="h-16 w-auto object-contain opacity-95 md:h-20"
             />
           </Link>
           <p className="max-w-sm text-sm leading-relaxed text-zinc-400">

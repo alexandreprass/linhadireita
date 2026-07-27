@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { AdminArticlesTable } from "./AdminArticlesTable";
 import { CollectButton } from "./CollectButton";
 import { LogoutButton } from "./LogoutButton";
+import { RewriteUrlForm } from "./RewriteUrlForm";
 
 export const dynamic = "force-dynamic";
 
@@ -61,10 +62,13 @@ export default async function AdminPage() {
       </div>
 
       <p className="mb-6 text-xs text-zinc-500">
-        Só reescreve matérias com data de <strong className="text-zinc-400">hoje (Brasília)</strong>.
+        Coleta automática: só matérias de <strong className="text-zinc-400">hoje (Brasília)</strong>.
         Duplicatas das últimas 24h são ignoradas. O botão vermelho redondo para todas as coletas.
-        Datas no site usam horário de Brasília.
       </p>
+
+      <div className="mb-8">
+        <RewriteUrlForm />
+      </div>
 
       <AdminArticlesTable articles={rows} />
 

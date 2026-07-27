@@ -8,7 +8,6 @@ const OPTIONS = [1, 2, 3, 5, 8, 10, 15, 20, 30, 50];
 export function CollectButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [stopping, setStopping] = useState(false);
   const [msg, setMsg] = useState("");
   const [qty, setQty] = useState(5);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -21,7 +20,6 @@ export function CollectButton() {
   }
 
   useEffect(() => {
-    // Se já houver coleta ao abrir a página, mostra estado
     void (async () => {
       try {
         const res = await fetch("/api/admin/articles?status=1");
@@ -53,7 +51,6 @@ export function CollectButton() {
         if (!c?.running) {
           stopPolling();
           setLoading(false);
-          setStopping(false);
           const last = c?.lastResult;
           setMsg(
             last?.message
@@ -67,7 +64,7 @@ export function CollectButton() {
         }
         setMsg(
           c.cancelRequested
-            ? "Parando… aguardando a notícia atual terminar."
+            ? "Parando… aguardando a etapa atual terminar."
             : "Coleta em andamento…"
         );
       } catch {
@@ -78,7 +75,6 @@ export function CollectButton() {
 
   async function collect() {
     setLoading(true);
-    setStopping(false);
     setMsg(`Iniciando coleta de até ${qty} notícia(s)…`);
     try {
       const res = await fetch(`/api/admin/articles?max=${qty}`, { method: "POST" });
@@ -89,29 +85,11 @@ export function CollectButton() {
         return;
       }
       setMsg(data.message || "Coleta iniciada…");
+      setLoading(true);
       startPolling();
     } catch (err) {
       setMsg(String(err));
       setLoading(false);
-    }
-  }
-
-  async function stopCollect() {
-    setStopping(true);
-    setMsg("Solicitando parada…");
-    try {
-      const res = await fetch("/api/admin/collect/stop", { method: "POST" });
-      const data = await res.json();
-      setMsg(data.message || "Parada solicitada");
-      if (!data.collect?.running) {
-        setLoading(false);
-        setStopping(false);
-        stopPolling();
-        router.refresh();
-      }
-    } catch (err) {
-      setMsg(String(err));
-      setStopping(false);
     }
   }
 
@@ -141,18 +119,72 @@ export function CollectButton() {
         >
           {loading ? "Coletando..." : "Coletar agora"}
         </button>
-        {loading ? (
-          <button
-            type="button"
-            onClick={stopCollect}
-            disabled={stopping}
-            className="rounded-full border border-red-500/40 bg-red-600/20 px-4 py-2 text-sm font-semibold text-red-300 hover:bg-red-600/30 disabled:opacity-60"
-          >
-            {stopping ? "Parando..." : "Parar coleta"}
-          </button>
-        ) : null}
       </div>
       {msg ? <span className="max-w-sm text-right text-[11px] text-zinc-500">{msg}</span> : null}
+    </div>
+  );
+}
+
+/** Botão sempre visível — para todos os processos de coleta ativos. */
+export function StopCollectButton() {
+  const router = useRouter();
+  const [stopping, setStopping] = useState(false);
+  const [active, setActive] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/admin/articles?status=1");
+        const data = await res.json();
+        if (!alive) return;
+        setActive(Boolean(data.collect?.running || data.collect?.cancelRequested));
+      } catch {
+        /* ignore */
+      }
+    };
+    void tick();
+    const id = setInterval(tick, 2500);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  async function stopAll() {
+    setStopping(true);
+    setMsg("Parando todos os processos de coleta…");
+    try {
+      const res = await fetch("/api/admin/collect/stop", { method: "POST" });
+      const data = await res.json();
+      setMsg(data.message || "Parada enviada");
+      setActive(Boolean(data.collect?.running));
+      router.refresh();
+    } catch (err) {
+      setMsg(String(err));
+    } finally {
+      setStopping(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-stretch gap-2 rounded-2xl border border-red-500/30 bg-red-950/30 p-4 sm:min-w-[220px]">
+      <p className="text-xs font-bold uppercase tracking-wider text-red-300">Emergência</p>
+      <button
+        type="button"
+        onClick={stopAll}
+        disabled={stopping}
+        className="rounded-full border border-red-500/50 bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-red-900/40 transition hover:bg-red-500 disabled:opacity-60"
+      >
+        {stopping ? "Parando tudo…" : "Parar coleta"}
+      </button>
+      <p className="text-[11px] leading-relaxed text-red-200/70">
+        {active
+          ? "Coleta ativa detectada — clique para interromper todos os processos."
+          : "Sempre disponível. Encerra qualquer coleta em andamento no servidor."}
+      </p>
+      {msg ? <p className="text-[11px] text-red-200/90">{msg}</p> : null}
     </div>
   );
 }

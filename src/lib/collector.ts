@@ -56,12 +56,40 @@ export function isCollectRunning() {
   return running;
 }
 
-/** Solicita parada da coleta em andamento (para entre uma notícia e a próxima). */
-export function requestStopCollection(): boolean {
-  if (!running) return false;
+/**
+ * Para TODOS os processos de coleta ativos.
+ * Sinaliza cancelamento imediato; o loop encerra entre etapas.
+ * Também marca jobs "running" no banco como cancelled.
+ */
+export async function requestStopCollection(): Promise<{
+  stopped: boolean;
+  wasRunning: boolean;
+  jobsCancelled: number;
+}> {
+  const wasRunning = running;
   cancelRequested = true;
-  console.log("[collector] Parada solicitada pelo usuário");
-  return true;
+  console.log("[collector] PARAR TUDO — cancelRequested=true running=", running);
+
+  // Marca jobs em andamento no banco
+  const result = await prisma.jobLog.updateMany({
+    where: { status: "running", kind: "collect" },
+    data: {
+      status: "cancelled",
+      detail: "interrompido pelo usuário (Parar coleta)",
+      finishedAt: new Date(),
+    },
+  });
+
+  if (!wasRunning) {
+    // Nada em memória, mas limpamos o flag para o próximo ciclo
+    cancelRequested = false;
+  }
+
+  return {
+    stopped: true,
+    wasRunning,
+    jobsCancelled: result.count,
+  };
 }
 
 export function getCollectStatus() {

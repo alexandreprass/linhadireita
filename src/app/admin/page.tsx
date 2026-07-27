@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/format";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminActions } from "./AdminActions";
-import { CollectButton } from "./CollectButton";
+import { CollectButton, StopCollectButton } from "./CollectButton";
 import { LogoutButton } from "./LogoutButton";
 
 export const dynamic = "force-dynamic";
@@ -46,10 +46,14 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <p className="mb-6 text-xs text-zinc-500">
-        Escolha quantas notícias coletar e clique em “Coletar agora”. Duplicatas das últimas 24h e
-        links já usados são ignorados automaticamente.
-      </p>
+      <div className="mb-8 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
+        <p className="text-xs text-zinc-500">
+          Escolha quantas notícias coletar e clique em “Coletar agora”. Duplicatas das últimas 24h e
+          links já usados são ignorados automaticamente. Use o botão vermelho para parar qualquer
+          coleta ativa no servidor.
+        </p>
+        <StopCollectButton />
+      </div>
 
       <div className="overflow-hidden rounded-2xl border border-white/10">
         <table className="w-full text-left text-sm">

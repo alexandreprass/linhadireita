@@ -45,12 +45,35 @@ export type CollectStats = {
   imagesOk: number;
   errors: string[];
   articles: { id: string; slug: string; title: string }[];
+  cancelled?: boolean;
 };
 
 let running = false;
+let cancelRequested = false;
+let lastResult: CollectStats | null = null;
 
 export function isCollectRunning() {
   return running;
+}
+
+/** Solicita parada da coleta em andamento (para entre uma notícia e a próxima). */
+export function requestStopCollection(): boolean {
+  if (!running) return false;
+  cancelRequested = true;
+  console.log("[collector] Parada solicitada pelo usuário");
+  return true;
+}
+
+export function getCollectStatus() {
+  return {
+    running,
+    cancelRequested,
+    lastResult,
+  };
+}
+
+export function wasCancelRequested() {
+  return cancelRequested;
 }
 
 function stripHtml(html: string): string {
@@ -208,6 +231,7 @@ export async function runCollectionCycle(
   }
 
   running = true;
+  cancelRequested = false;
   const hourCap = MAX_NEWS_PER_HOUR;
   const ignoreHour = opts.ignoreHourLimit === true;
   // Coleta manual: sem teto horário (até 50 por clique, ou o max pedido)
@@ -257,11 +281,27 @@ export async function runCollectionCycle(
       return stats;
     }
 
+    if (cancelRequested) {
+      stats.cancelled = true;
+      stats.message = "coleta cancelada antes de iniciar";
+      await prisma.jobLog.update({
+        where: { id: job.id },
+        data: { status: "cancelled", detail: stats.message, finishedAt: new Date() },
+      });
+      lastResult = stats;
+      return stats;
+    }
+
     const rawList = await collectRawFromRss();
     stats.fetched = rawList.length;
 
     let processed = 0;
     for (const raw of rawList) {
+      if (cancelRequested) {
+        stats.cancelled = true;
+        console.log("[collector] Coleta interrompida — parando o loop");
+        break;
+      }
       if (processed >= limit) break;
 
       try {
@@ -347,6 +387,17 @@ export async function runCollectionCycle(
           throw err;
         }
 
+        if (cancelRequested) {
+          stats.cancelled = true;
+          // marca o link para não travar no mesmo item se recomeçar
+          await prisma.seenLink.upsert({
+            where: { link: raw.originalLink },
+            create: { link: raw.originalLink },
+            update: {},
+          });
+          break;
+        }
+
         // Segunda checagem: título reescrito pode colidir com outra matéria
         const dupAfter = await isDuplicateNews({
           originalLink: raw.originalLink,
@@ -365,6 +416,11 @@ export async function runCollectionCycle(
             `[collector] DUPLICADA pós-IA: ${rewritten.title.slice(0, 60)} (${dupAfter.reason})`
           );
           continue;
+        }
+
+        if (cancelRequested) {
+          stats.cancelled = true;
+          break;
         }
 
         // Imagem Grok Imagine (fallback: feed)
@@ -446,15 +502,26 @@ export async function runCollectionCycle(
     // Limpeza final de retenção
     stats.pruned += await pruneOldArticles();
 
-    stats.message =
+    const baseMsg =
       `fetched=${stats.fetched} saved=${stats.saved} blocked=${stats.skippedBlocked} ` +
       `offtopic=${stats.skippedOffTopic} dup=${stats.skippedDuplicate} skip=${stats.skippedSeen} ` +
       `imgs=${stats.imagesOk} pruned=${stats.pruned} ` +
       (ignoreHour ? `manual limit=${limit}` : `auto limit=${limit}/h`);
-    await prisma.jobLog.update({
-      where: { id: job.id },
-      data: { status: "ok", detail: stats.message, finishedAt: new Date() },
-    });
+
+    if (stats.cancelled) {
+      stats.message = `coleta interrompida pelo usuário | ${baseMsg}`;
+      await prisma.jobLog.update({
+        where: { id: job.id },
+        data: { status: "cancelled", detail: stats.message, finishedAt: new Date() },
+      });
+    } else {
+      stats.message = baseMsg;
+      await prisma.jobLog.update({
+        where: { id: job.id },
+        data: { status: "ok", detail: stats.message, finishedAt: new Date() },
+      });
+    }
+    lastResult = stats;
     return stats;
   } catch (err) {
     stats.ok = false;
@@ -464,8 +531,10 @@ export async function runCollectionCycle(
       where: { id: job.id },
       data: { status: "error", detail: stats.message, finishedAt: new Date() },
     });
+    lastResult = stats;
     return stats;
   } finally {
     running = false;
+    cancelRequested = false;
   }
 }

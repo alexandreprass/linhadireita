@@ -23,7 +23,7 @@ export function RecentFeed({
 }) {
   if (!articles.length) {
     return (
-      <aside className="feed-panel sticky top-16">
+      <aside className="feed-panel sticky top-[7.5rem]">
         <FeedHeader title={title} subtitle={subtitle} />
         <p className="px-4 pb-4 text-sm text-zinc-500">Nenhuma notícia recente ainda.</p>
       </aside>
@@ -31,7 +31,7 @@ export function RecentFeed({
   }
 
   return (
-    <aside className="feed-panel sticky top-16">
+    <aside className="feed-panel sticky top-[7.5rem]">
       <FeedHeader title={title} subtitle={subtitle} />
       <ul className="divide-y divide-white/[0.06]">
         {articles.map((a, i) => (
